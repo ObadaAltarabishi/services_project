@@ -46,6 +46,7 @@ class ServicePolicy
     public function delete(User $user, Service $service): bool
     {
         //
+        return true;
     }
 
     /**

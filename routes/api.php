@@ -58,7 +58,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('orders.files', FileController::class)->only(['index', 'store']);
     
     // Files
-    Route::apiResource('files', FileController::class)->only(['show', 'destroy']);
+    Route::apiResource('files', FileController::class)->only(['show', 'destroy','store']);
     
     // Notifications
     Route::apiResource('notifications', NotificationController::class)->only(['index', 'show', 'destroy']);
