@@ -26,7 +26,7 @@ class AuthController extends Controller
             'phone_number'=>$request->phone_number,
         ]);
 
-        // إنشاء محفظة للمستخدم
+        // إنشاء محفظة للمستخدمين
         $user->wallet()->create(['balance' => 0]);
 
         // إنشاء ملف تعريف للمستخدم

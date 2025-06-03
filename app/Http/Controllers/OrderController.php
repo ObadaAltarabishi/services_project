@@ -14,9 +14,9 @@ class OrderController extends Controller
         $this->middleware('auth:sanctum');
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        return Order::with(['user', 'service', 'providedService'])->paginate(10);
+        return Order::where('user_id',$request->user()->id)->with(['user', 'service', 'providedService'])->paginate(10);
     }
 
     public function store(Request $request)
@@ -65,7 +65,7 @@ class OrderController extends Controller
         }
 
         $request->validate([
-            'status' => 'sometimes|in:pending,accepted,rejected,completed',
+            'status' => 'sometimes|in:pending,active,accepted,rejected,canceled,completed',
             'provided_service_id' => 'nullable|exists:services,id',
             'end_date' => 'nullable|date|after:start_date',
         ]);

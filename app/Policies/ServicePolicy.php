@@ -4,7 +4,6 @@ namespace App\Policies;
 
 use App\Models\Service;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
 
 class ServicePolicy
 {
@@ -13,7 +12,8 @@ class ServicePolicy
      */
     public function viewAny(User $user): bool
     {
-        //
+        // يمكن لأي مستخدم مصادق عليه رؤية قائمة الخدمات
+        return true;
     }
 
     /**
@@ -21,7 +21,8 @@ class ServicePolicy
      */
     public function view(User $user, Service $service): bool
     {
-        //
+        // يمكن لأي مستخدم رؤية الخدمة (حتى غير المسجلين)
+        return true;
     }
 
     /**
@@ -29,7 +30,8 @@ class ServicePolicy
      */
     public function create(User $user): bool
     {
-        //
+        // يمكن لأي مستخدم مصادق عليه إنشاء خدمات
+        return true;
     }
 
     /**
@@ -37,7 +39,8 @@ class ServicePolicy
      */
     public function update(User $user, Service $service): bool
     {
-        //
+        // فقط مقدم الخدمة (صاحبها) يمكنه التعديل
+        return $user->id === $service->user_id;
     }
 
     /**
@@ -45,8 +48,8 @@ class ServicePolicy
      */
     public function delete(User $user, Service $service): bool
     {
-        //
-        return true;
+        // فقط مقدم الخدمة (صاحبها) يمكنه الحذف
+        return $user->id === $service->user_id;
     }
 
     /**
@@ -54,7 +57,8 @@ class ServicePolicy
      */
     public function restore(User $user, Service $service): bool
     {
-        //
+        // نفس صلاحيات الحذف
+        return $this->delete($user, $service);
     }
 
     /**
@@ -62,6 +66,7 @@ class ServicePolicy
      */
     public function forceDelete(User $user, Service $service): bool
     {
-        //
+        // نفس صلاحيات الحذف العادي
+        return $this->delete($user, $service);
     }
 }

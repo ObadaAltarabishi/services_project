@@ -42,8 +42,8 @@ class OrderPolicy
     {
         // فقط صاحب الطلب أو المدير يمكنهم التعديل
         // وحتى حالة الطلب تسمح بالتعديل (مثلاً لم يتم الموافقة عليه بعد)
-        return ($user->id === $order->user_id || $user->isAdmin())
-            && $order->status === 'pending';
+        return ($user->id == $order->service->user_id)
+        || ($user->id == $order->user_id && ($order->status == "pending" || $order->status == "active"));
     }
 
     /**

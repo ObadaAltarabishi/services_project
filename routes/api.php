@@ -32,6 +32,9 @@ Route::post('/login', [AuthController::class, 'login']);
 // Categories (public access)
 Route::apiResource('categories', CategoryController::class);
 
+Route::apiResource('services', ServiceController::class);
+Route::get('/services',[ServiceController::class,'index']);
+ 
 // Protected routes (require authentication)
 Route::middleware('auth:sanctum')->group(function () {
     // Auth
@@ -49,7 +52,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('profiles', ProfileController::class)->only(['show', 'update']);
     
     // Services
-    Route::apiResource('services', ServiceController::class);
+    // Route::apiResource('services', ServiceController::class);
+    Route::post('/services', [ServiceController::class, 'store']);
+    Route::patch('/services', [ServiceController::class, 'update']);
+    Route::delete('/services', [ServiceController::class, 'destroy']);
+
     Route::post('/services/{service}/images', [ImageController::class, 'store']);
     Route::apiResource('services.images', ImageController::class)->only(['index', 'show', 'destroy']);
     
