@@ -56,6 +56,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/services', [ServiceController::class, 'store']);
     Route::patch('/services', [ServiceController::class, 'update']);
     Route::delete('/services', [ServiceController::class, 'destroy']);
+    Route::get('/services/{id}', [ServiceController::class, 'show']);
 
     Route::post('/services/{service}/images', [ImageController::class, 'store']);
     Route::apiResource('services.images', ImageController::class)->only(['index', 'show', 'destroy']);
