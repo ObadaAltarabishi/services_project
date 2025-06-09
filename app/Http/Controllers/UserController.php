@@ -15,7 +15,7 @@ class UserController extends Controller
 
     public function index()
     {
-        return User::with(['wallet', 'profile'])->paginate(10);
+        return User::with([ 'profile'])->paginate(10);
     }
 
     public function store(Request $request)
@@ -26,7 +26,7 @@ class UserController extends Controller
 
     public function show(User $user)
     {
-        return $user->load(['wallet', 'profile', 'services', 'orders']);
+        return $user->load([ 'profile', 'services']);
     }
 
     public function update(Request $request, User $user)

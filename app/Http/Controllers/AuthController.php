@@ -5,41 +5,109 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
-
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
 {
-    public function register(Request $request)
-    {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => ['required', Rules\Password::defaults()],
-        ]);
+public function register(Request $request)
+{
+    $validator = Validator::make($request->all(), [
+        // User fields
+        'name' => 'required|string|max:255',
+        'email' => 'required|string|email|max:255|unique:users',
+        'password' => ['required', Rules\Password::defaults()],
+        'phone_number' => 'required|numeric|digits_between:9,11|unique:users,phone_number',
+        
+        // Profile fields
+        'description' => 'required|string|max:1000',
+        'picture' => 'image|max:5120', // 5MB max
+        'experience_years' => [
+            'required',
+            'integer',
+            'min:0',
+            'max:70',
+            function ($attribute, $value, $fail) use ($request) {
+                if ($request->age - $value <= 14) {
+                    $fail('The age must be at least 15 years greater than years of experience.');
+                }
+            }
+        ],
+        'age' => [
+            'required',
+            'integer',
+            'min:18',
+            'max:100',
+            function ($attribute, $value, $fail) use ($request) {
+                if ($value - $request->experience_years <= 14) {
+                    $fail('The age must be at least 18 years greater than years of experience.');
+                }
+            }
+        ],
+        'location' => 'required|string|max:255'
+    ]);
 
+    // Rest of the method remains the same...
+    if ($validator->fails()) {
+        return response()->json([
+            'message' => 'Validation error',
+            'errors' => $validator->errors()
+        ], 422);
+    }
+
+    try {
+        DB::beginTransaction();
+
+        $validatedData = $validator->validated();
+
+        // Create user
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'phone_number'=>$request->phone_number,
+            'name' => $validatedData['name'],
+            'email' => $validatedData['email'],
+            'password' => Hash::make($validatedData['password']),
+            'phone_number' => $validatedData['phone_number'],
         ]);
 
-        // إنشاء محفظة للمستخدمين
-        $user->wallet()->create(['balance' => 0]);
+        // Handle profile picture upload
+        $picturePath = null;
+        if ($request->hasFile('picture')) {
+            $picturePath = $request->file('picture')->store('profiles', 'public');
+        }
 
-        // إنشاء ملف تعريف للمستخدم
-        $user->profile()->create();
+        // Create profile
+        $user->profile()->create([
+            'description' => $validatedData['description'],
+            'picture_url' => $picturePath ? Storage::url($picturePath) : null,
+            'experience_years' => $validatedData['experience_years'],
+            'age' => $validatedData['age'],
+            'location' => $validatedData['location']
+        ]);
+
+        // Create wallet
+        $user->wallet()->create(['balance' => 0]);
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
+        DB::commit();
+
         return response()->json([
+            'message' => 'User registered successfully',
             'access_token' => $token,
             'token_type' => 'Bearer',
-            'user' => $user,
-        ]);
+            'user' => $user->load(['wallet', 'profile'])
+        ], 201);
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return response()->json([
+            'message' => 'Registration failed',
+            'error' => $e->getMessage()
+        ], 500);
     }
+}
 
     public function login(Request $request)
     {

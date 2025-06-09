@@ -67,7 +67,7 @@ Route::middleware('auth:sanctum')->group(function () {
     
     // Files
     Route::apiResource('files', FileController::class)->only(['show', 'destroy','store']);
-    
+    Route::get('/download/{id}',[FileController::class,'download']);
     // Notifications
     Route::apiResource('notifications', NotificationController::class)->only(['index', 'show', 'destroy']);
     Route::put('/notifications/{notification}/mark-as-seen', [NotificationController::class, 'markAsSeen']);
