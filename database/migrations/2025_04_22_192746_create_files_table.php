@@ -10,10 +10,10 @@ return new class extends Migration
     {
         Schema::create('files', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('order_id')->constrained('orders')->onDelete('cascade');
+            $table->foreignId('order_id')->constrained()->onDelete('cascade');
             $table->foreignId('uploader_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('receiver_id')->constrained('users')->onDelete('cascade');
-            $table->file('path');
+            $table->string('path');
             $table->string('mime_type');
             $table->integer('size');
             $table->timestamps();

@@ -13,6 +13,7 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\VerificationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -34,7 +35,10 @@ Route::apiResource('categories', CategoryController::class);
 
 Route::apiResource('services', ServiceController::class);
 Route::get('/services',[ServiceController::class,'index']);
- 
+
+Route::post('/verify-email', [VerificationController::class, 'verifyEmail']);
+Route::post('/resend-verification', [VerificationController::class, 'resendCode']);
+
 // Protected routes (require authentication)
 Route::middleware('auth:sanctum')->group(function () {
     // Auth
@@ -45,8 +49,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('users', UserController::class)->except(['store']);
     
     // Wallets
-    Route::apiResource('wallets', WalletController::class)->only(['show', 'update']);
-    Route::post('/wallets/{wallet}/add-funds', [WalletController::class,     'addFunds']);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/wallet', [WalletController::class, 'show']);
+    Route::put('/wallet', [WalletController::class, 'update']);
+    Route::post('/wallet/add-funds', [WalletController::class, 'addFunds']);
+
+});
     
     // Profiles
     Route::apiResource('profiles', ProfileController::class)->only(['show', 'update']);

@@ -10,6 +10,9 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\VerificationCodeMail;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -69,7 +72,11 @@ public function register(Request $request)
             'email' => $validatedData['email'],
             'password' => Hash::make($validatedData['password']),
             'phone_number' => $validatedData['phone_number'],
+            'verification_code' => Str::random(6),
+            'verification_code_sent_at' => now()
         ]);
+
+        Mail::to($user->email)->send(new VerificationCodeMail($user->verification_code));
 
         // Handle profile picture upload
         $picturePath = null;

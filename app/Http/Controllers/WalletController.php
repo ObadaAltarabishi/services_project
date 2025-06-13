@@ -15,40 +15,39 @@ class WalletController extends Controller
 
     public function show(Wallet $wallet)
     {
-        if (!Gate::allows('view-wallet', $wallet)) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
+        $this->authorize('view', $wallet);
         return $wallet;
     }
 
     public function update(Request $request, Wallet $wallet)
     {
-        if (!Gate::allows('update-wallet', $wallet)) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
+        $this->authorize('update', $wallet);
 
-        $request->validate([
+        $validated = $request->validate([
             'balance' => 'required|numeric|min:0',
         ]);
 
-        $wallet->update($request->only('balance'));
+        $wallet->update($validated);
 
-        return $wallet;
+        return response()->json([
+            'message' => 'Wallet updated successfully',
+            'wallet' => $wallet
+        ]);
     }
 
     public function addFunds(Request $request, Wallet $wallet)
     {
-        if (!Gate::allows('update-wallet', $wallet)) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
+        $this->authorize('addFunds', $wallet);
 
-        $request->validate([
-            'amount' => 'required|numeric|min:0',
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0.01', // Minimum amount to add
         ]);
 
-        $wallet->increment('balance', $request->amount);
+        $wallet->increment('balance', $validated['amount']);
 
-        return $wallet;
+        return response()->json([
+            'message' => 'Funds added successfully',
+            'wallet' => $wallet->fresh()
+        ]);
     }
 }
