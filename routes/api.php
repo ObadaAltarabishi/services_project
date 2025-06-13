@@ -36,7 +36,7 @@ Route::apiResource('categories', CategoryController::class);
 Route::apiResource('services', ServiceController::class);
 Route::get('/services',[ServiceController::class,'index']);
 
-Route::post('/verify-email', [VerificationController::class, 'verifyEmail']);
+Route::post('/verify-email', [VerificationController::class, 'sendVerificationCode']);
 Route::post('/resend-verification', [VerificationController::class, 'resendCode']);
 
 // Protected routes (require authentication)
@@ -44,10 +44,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // Auth
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
+Route::post('/verify-code', [VerificationController::class, 'verifyEmail']);  
 
     // Users
     Route::apiResource('users', UserController::class)->except(['store']);
-    
     // Wallets
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/wallet', [WalletController::class, 'show']);

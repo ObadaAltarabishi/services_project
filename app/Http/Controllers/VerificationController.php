@@ -13,11 +13,11 @@ class VerificationController extends Controller
 {
     public function sendVerificationCode(Request $request)
     {
-        $request->validate(['email' => 'required|email|exists:users,email']);
+        // Get authenticated user from token
+        $user = $request->user();
         
-        $user = User::where('email', $request->email)->first();
-        
-        $code = Str::random(6); // or mt_rand(100000, 999999)
+        // Generate new code
+        $code = Str::random(6);
         
         $user->update([
             'verification_code' => $code,
@@ -28,7 +28,8 @@ class VerificationController extends Controller
             Mail::to($user->email)->send(new VerificationCodeMail($code));
             return response()->json([
                 'success' => true,
-                'message' => 'Verification code sent to your email'
+                'message' => 'Verification code sent to your email',
+                'code' => $code // Only include this in development!
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -42,15 +43,12 @@ class VerificationController extends Controller
     public function verifyEmail(Request $request)
     {
         $request->validate([
-            'email' => 'required|email|exists:users,email',
             'code' => 'required|string'
         ]);
         
-        $user = User::where('email', $request->email)
-            ->where('verification_code', $request->code)
-            ->first();
+        $user = $request->user();
             
-        if (!$user) {
+        if ($user-> verification_code !== $request->code) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid verification code'
@@ -75,7 +73,7 @@ class VerificationController extends Controller
             'message' => 'Email verified successfully'
         ]);
     }
-    
+
     public function resendCode(Request $request)
     {
         return $this->sendVerificationCode($request);
