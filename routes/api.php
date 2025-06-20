@@ -49,13 +49,11 @@ Route::post('/verify-code', [VerificationController::class, 'verifyEmail']);
     // Users
     Route::apiResource('users', UserController::class)->except(['store']);
     // Wallets
-Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/wallet', [WalletController::class, 'show']);
-    Route::put('/wallet', [WalletController::class, 'update']);
-    Route::post('/wallet/add-funds', [WalletController::class, 'addFunds']);
+    // Route::get('/wallet/{id}', [WalletController::class, 'show']);
+    // Route::put('/wallet/{id}', [WalletController::class, 'update']);
+    Route::apiResource('wallet', WalletController::class);
+    // Route::patch('/wallet/add-funds/{id}', [WalletController::class, 'addFunds']);
 
-});
-    
     // Profiles
     Route::apiResource('profiles', ProfileController::class)->only(['show', 'update']);
     

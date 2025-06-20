@@ -27,7 +27,7 @@ class WalletController extends Controller
             'balance' => 'required|numeric|min:0',
         ]);
 
-        $wallet->update($validated);
+        $wallet->increment('balance',$validated['balance']);
 
         return response()->json([
             'message' => 'Wallet updated successfully',
@@ -40,10 +40,10 @@ class WalletController extends Controller
         $this->authorize('addFunds', $wallet);
 
         $validated = $request->validate([
-            'amount' => 'required|numeric|min:0.01', // Minimum amount to add
+            'balance' => 'required|numeric|min:0.01', // Minimum amount to add
         ]);
 
-        $wallet->increment('balance', $validated['amount']);
+        $wallet->increment('balance', $wallet['balance'] + $validated['balance']);
 
         return response()->json([
             'message' => 'Funds added successfully',
