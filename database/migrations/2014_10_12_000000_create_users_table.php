@@ -21,6 +21,7 @@ return new class extends Migration
              $table->bigInteger('phone_number')->unique();
              $table->string('verification_code')->nullable();
              $table->timestamp('verification_code_sent_at')->nullable();
+             $table->string('role');
              $table->rememberToken();
              $table->timestamps();
     });

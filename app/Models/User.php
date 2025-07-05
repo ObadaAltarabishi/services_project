@@ -14,6 +14,7 @@ class User extends Authenticatable
 protected $fillable = [
            'name',
            'email',
+           'role',
            'password',
            'report_count',
            'phone_number',
@@ -60,5 +61,9 @@ protected $fillable = [
     public function files()
     {
         return $this->hasMany(File::class, 'uploader_id');
+    }
+    public function isAdmin()
+    {
+        return $this->role === 'admin'; // Simple check if role is 'admin'
     }
 }

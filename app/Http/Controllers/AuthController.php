@@ -24,7 +24,7 @@ public function register(Request $request)
         'email' => 'required|string|email|max:255|unique:users',
         'password' => ['required', Rules\Password::defaults()],
         'phone_number' => 'required|numeric|digits_between:9,11|unique:users,phone_number',
-        
+        'role'=>'required',
         // Profile fields
         'description' => 'required|string|max:1000',
         'picture' => 'image|max:5120', // 5MB max
@@ -73,7 +73,8 @@ public function register(Request $request)
             'password' => Hash::make($validatedData['password']),
             'phone_number' => $validatedData['phone_number'],
             'verification_code' => Str::random(6),
-            'verification_code_sent_at' => now()
+            'verification_code_sent_at' => now(),
+            'role'=> $validatedData['role']
         ]);
 
         Mail::to($user->email)->send(new VerificationCodeMail($user->verification_code));

@@ -17,6 +17,7 @@ class Service extends Model
         'exchange_with_category_id',
         'user_id',
         'category_id',
+        'status'
     ];
 
     public function user()

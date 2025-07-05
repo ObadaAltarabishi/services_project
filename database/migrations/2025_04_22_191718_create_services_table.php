@@ -14,7 +14,7 @@ return new class extends Migration
             $table->text('description');
             $table->decimal('price', 10, 2);
             $table->time('exchange_time')->nullable();
-            
+            $table->text('status');
             // العلاقة مع المستخدم الذي أنشأ الخدمة
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             
