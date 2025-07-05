@@ -182,4 +182,15 @@ public function update(Request $request, Order $order)
 
         return response()->json(['message' => 'Order deleted successfully']);
     }
+
+      public function rejectedOrders(Request $request)
+    {
+        Gate::authorize('admin-action');
+        
+        return Order::with(['user', 'service', 'providedService'])
+            ->where('status', 'rejected')
+            ->latest()
+            ->paginate(10);
+    }
+
 }

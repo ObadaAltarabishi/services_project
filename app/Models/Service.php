@@ -9,6 +9,11 @@ class Service extends Model
 {
     use HasFactory;
 
+    // Status constants
+    const STATUS_PENDING = 'pending';
+    const STATUS_ACCEPTED = 'accepted';
+    const STATUS_REJECTED = 'rejected';
+
     protected $fillable = [
         'name',
         'description',
@@ -20,6 +25,11 @@ class Service extends Model
         'status'
     ];
 
+    protected $attributes = [
+        'status' => self::STATUS_PENDING
+    ];
+
+    // Relationships
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -48,5 +58,37 @@ class Service extends Model
     public function orders()
     {
         return $this->hasMany(Order::class);
+    }
+
+    // Status check methods
+    public function isPending()
+    {
+        return $this->status === self::STATUS_PENDING;
+    }
+
+    public function isAccepted()
+    {
+        return $this->status === self::STATUS_ACCEPTED;
+    }
+
+    public function isRejected()
+    {
+        return $this->status === self::STATUS_REJECTED;
+    }
+
+    // Scope methods
+    public function scopePending($query)
+    {
+        return $query->where('status', self::STATUS_PENDING);
+    }
+
+    public function scopeAccepted($query)
+    {
+        return $query->where('status', self::STATUS_ACCEPTED);
+    }
+
+    public function scopeRejected($query)
+    {
+        return $query->where('status', self::STATUS_REJECTED);
     }
 }

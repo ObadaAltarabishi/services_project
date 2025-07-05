@@ -78,6 +78,22 @@ Route::post('/verify-code', [VerificationController::class, 'verifyEmail']);
     Route::apiResource('notifications', NotificationController::class)->only(['index', 'show', 'destroy']);
     Route::put('/notifications/{notification}/mark-as-seen', [NotificationController::class, 'markAsSeen']);
     
+        // Admin routes
+    Route::prefix('admin')->group(function () {
+        Route::apiResource('admins', AdminController::class);
+        
+        // Report management routes
+        Route::post('/users/{user}/increase-reports', [AdminController::class, 'increaseReportCount']);
+        Route::post('/users/{user}/decrease-reports', [AdminController::class, 'decreaseReportCount']);
+        Route::post('/users/{user}/reset-reports', [AdminController::class, 'resetReportCount']);
+
+        Route::get('/services/pending', [ServiceController::class, 'pendingServices']);
+        Route::post('/services/{service}/approve', [ServiceController::class, 'approveService']);
+        Route::post('/services/{service}/reject', [ServiceController::class, 'rejectService']);
+        Route::get('/orders/rejected', [OrderController::class, 'rejectedOrders']);
+
+    });
+
     // Admins (admin only)
     // Route::middleware('can:admin')->group(function () {
     //     Route::apiResource('admins', AdminController::class);

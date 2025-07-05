@@ -11,15 +11,24 @@ class Notification extends Model
 
     protected $fillable = [
         'user_id',
-        'order_id',
+        'service_id',  // Added service relationship
         'content',
-        'date',
+        'type',       // Added type field (e.g., 'service_approved')
         'is_seen',
+    ];
+
+    protected $casts = [
+        'is_seen' => 'boolean',
     ];
 
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function service()
+    {
+        return $this->belongsTo(Service::class);
     }
 
     public function order()

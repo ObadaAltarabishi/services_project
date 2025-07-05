@@ -15,70 +15,80 @@ class ServiceController extends Controller
         $this->middleware('auth:sanctum')->except(['index', 'show']);
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        return Service::with(['user', 'category', 'images'])
-            ->latest()
-            ->paginate(10);
+        $query = Service::with(['user', 'category', 'images'])
+            ->latest();
+            
+        if ($request->has('status')) {
+            // Only allow status filtering if user is admin
+            if (Gate::allows('admin-action')) {
+                $query->where('status', $request->status);
+            }
+        } elseif (!Gate::allows('admin-action')) {
+            // Regular users only see accepted services
+            $query->where('status', 'accepted');
+        }
+            
+        return $query->paginate(10);
     }
 
-   public function store(Request $request)
-{
-    $validator = Validator::make($request->all(), [
-        'name' => 'required|string|max:255',
-        'description' => 'required|string',
-        'price' => 'required|numeric|min:0',
-        'exchange_time' => 'nullable',
-        'exchange_with_service_id' => 'nullable|exists:services,id',
-        'category_id' => 'required|exists:categories,id',
-        'path' => 'required|file|image|max:10240', // Added 'image' validation
-    ]);
+    public function store(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'description' => 'required|string',
+            'price' => 'required|numeric|min:0',
+            'exchange_time' => 'nullable',
+            'exchange_with_service_id' => 'nullable|exists:services,id',
+            'category_id' => 'required|exists:categories,id',
+            'path' => 'required|file|image|max:10240',
+        ]);
 
-    if ($validator->fails()) {
-        return response()->json([
-            'message' => 'Validation error',
-            'errors' => $validator->errors()
-        ], 422);
-    }
-
-    try {
-        $validatedData = $validator->validated();
-        $validatedData['user_id'] = auth()->id();
-
-        // Create the service first
-        $service = Service::create($validatedData);
-
-        // Handle the image upload
-        if ($request->hasFile('path')) {
-            $image = $request->file('path');
-            
-            // Store the image in storage/app/public/images
-            $path = $image->store('public/images');
-            
-            // Create a public URL for the image
-            $url = asset(str_replace('public', 'storage', $path));
-
-            // Create image record in database
-            $service->images()->create([
-                'url' => $url,
-            ]);
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation error',
+                'errors' => $validator->errors()
+            ], 422);
         }
 
-        return response()->json(
-            $service->load(['user', 'category', 'images']),
-            201
-        );
+        try {
+            $validatedData = $validator->validated();
+            $validatedData['user_id'] = auth()->id();
+            $validatedData['status'] = 'pending';
 
-    } catch (\Exception $e) {
-        return response()->json([
-            'message' => 'Service creation failed',
-            'error' => $e->getMessage()
-        ], 500);
+            $service = Service::create($validatedData);
+
+            if ($request->hasFile('path')) {
+                $image = $request->file('path');
+                $path = $image->store('public/images');
+                $url = asset(str_replace('public', 'storage', $path));
+
+                $service->images()->create(['url' => $url]);
+            }
+
+            return response()->json(
+                $service->load(['user', 'category', 'images']),
+                201
+            );
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Service creation failed',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
-}
 
     public function show(Service $service)
     {
+        // Only show pending services to admins or service owner
+        if ($service->status === 'pending' && 
+            !Gate::allows('admin-action') && 
+            !Gate::allows('view-service', $service)) {
+            abort(403, 'This service is pending approval');
+        }
+
         return response()->json(
             $service->load(['user', 'category', 'images', 'exchangeWithCategory'])
         );
@@ -86,7 +96,7 @@ class ServiceController extends Controller
 
     public function update(Request $request, Service $service)
     {
-        Gate::authorize('update', $service);
+        Gate::authorize('update-service', $service);
 
         $validator = Validator::make($request->all(), [
             'name' => 'sometimes|string|max:255',
@@ -95,6 +105,7 @@ class ServiceController extends Controller
             'exchange_time' => 'nullable|date_format:H:i:s',
             'exchange_with_service_id' => 'nullable|exists:services,id',
             'category_id' => 'sometimes|exists:categories,id',
+            'status' => 'sometimes|in:pending,accepted,rejected'
         ]);
 
         if ($validator->fails()) {
@@ -102,6 +113,11 @@ class ServiceController extends Controller
                 'message' => 'Validation error',
                 'errors' => $validator->errors()
             ], 422);
+        }
+
+        // Only admins can change status
+        if ($request->has('status') && !Gate::allows('admin-action')) {
+            abort(403, 'Only admins can change service status');
         }
 
         $service->update($validator->validated());
@@ -113,7 +129,7 @@ class ServiceController extends Controller
 
     public function destroy(Service $service)
     {
-        Gate::authorize('delete', $service);
+        Gate::authorize('delete-service', $service);
 
         try {
             $service->delete();
@@ -127,5 +143,40 @@ class ServiceController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+    // Admin-only methods
+    public function pendingServices()
+    {
+        Gate::authorize('admin-action');
+        
+        return Service::with(['user', 'category', 'images'])
+            ->where('status', 'pending')
+            ->latest()
+            ->paginate(10);
+    }
+
+    public function approveService(Service $service)
+    {
+        Gate::authorize('admin-action');
+        
+        $service->update(['status' => 'accepted']);
+        
+        return response()->json([
+            'message' => 'Service approved successfully',
+            'service' => $service->fresh()
+        ]);
+    }
+
+    public function rejectService(Service $service)
+    {
+        Gate::authorize('admin-action');
+        
+        $service->update(['status' => 'rejected']);
+        
+        return response()->json([
+            'message' => 'Service rejected successfully',
+            'service' => $service->fresh()
+        ]);
     }
 }

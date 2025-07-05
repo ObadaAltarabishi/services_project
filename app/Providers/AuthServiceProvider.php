@@ -79,5 +79,28 @@ class AuthServiceProvider extends ServiceProvider
         Gate::define('view-notification', [NotificationPolicy::class, 'view']);
         Gate::define('update-notification', [NotificationPolicy::class, 'update']);
         Gate::define('delete-notification', [NotificationPolicy::class, 'delete']);
+
+        Gate::define('admin-action', function ($user) {
+           return $user->role === 'admin'; // Assuming you have 'role' column in users table
+        });
+
+        Gate::define('admin-action', function ($user) {
+    return $user->isAdmin();
+        });
+
+        Gate::define('view-service', function ($user, Service $service) {
+            return $user->id === $service->user_id;
+        });
+
+        Gate::define('update-service', function ($user, Service $service) {
+            return $user->isAdmin() || $user->id === $service->user_id;
+        });
+
+        Gate::define('delete-service', function ($user, Service $service) {
+            return $user->isAdmin() || $user->id === $service->user_id;
+        });
+
+        
+
     }
 }
