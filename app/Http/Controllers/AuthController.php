@@ -117,21 +117,51 @@ public function register(Request $request)
     }
 }
 
-    public function login(Request $request)
+      public function login(Request $request)
     {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+            'password' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation error',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        // First find the user by email
+        $user = User::where('email', $request->email)->first();
+
+        // Check if user exists
+        if (!$user) {
+            return response()->json([
+                'message' => 'Invalid login details'
+            ], 401);
+        }
+
+        // Check if account is restricted
+        if ($user->report_count >= 2) {
+            return response()->json([
+                'message' => 'Your account has been restricted due to multiple reports. Please contact support.'
+            ], 403);
+        }
+
+        // Verify credentials
         if (!Auth::attempt($request->only('email', 'password'))) {
             return response()->json([
                 'message' => 'Invalid login details'
             ], 401);
         }
 
-        $user = User::where('email', $request->email)->firstOrFail();
+        // Regenerate token
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'access_token' => $token,
             'token_type' => 'Bearer',
-            'user' => $user,
+            'user' => $user->load(['wallet', 'profile']),
         ]);
     }
 
