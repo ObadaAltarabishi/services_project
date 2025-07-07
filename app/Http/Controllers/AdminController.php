@@ -89,7 +89,7 @@ class AdminController extends Controller
         Gate::authorize('admin-action');
         
         $request->validate([
-            'amount' => 'sometimes|integer|min:1|max:10',
+            'amount' => 'sometimes|integer|min:1|max:1',
         ]);
 
         $amount = $request->input('amount', 1);
@@ -132,4 +132,19 @@ class AdminController extends Controller
             'new_count' => 0
         ]);
     }
+
+        public function blockUser(User $user)
+    {
+        // Gate::authorize('admin-action');
+        
+        $user->update(['report_count' => 2]);
+
+        return response()->json([
+            'message' => 'User blocked successfully',
+            'user' => $user->fresh(),
+            'new_count' => 2,
+            'status' => 'blocked'
+        ]);
+    }
+
 }

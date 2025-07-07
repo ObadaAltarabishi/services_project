@@ -47,6 +47,7 @@ Route::prefix('admin')->group(function () {
         Route::post('/users/{user}/increase-reports', [AdminController::class, 'increaseReportCount']);
         Route::post('/users/{user}/decrease-reports', [AdminController::class, 'decreaseReportCount']);
         Route::post('/users/{user}/reset-reports', [AdminController::class, 'resetReportCount']);
+        Route::post('/users/{user}/block', [AdminController::class, 'blockUser']); // New block route
 
         Route::get('/services/pending', [ServiceController::class, 'pendingServices']);
         Route::post('/services/{service}/approve', [ServiceController::class, 'approveService']);
