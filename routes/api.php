@@ -39,6 +39,23 @@ Route::get('/services',[ServiceController::class,'index']);
 Route::post('/verify-email', [VerificationController::class, 'sendVerificationCode']);
 Route::post('/resend-verification', [VerificationController::class, 'resendCode']);
 
+
+Route::prefix('admin')->group(function () {
+        // Route::apiResource('admins', AdminController::class);
+        Route::post('/register',[AdminController::class,'store']);
+        // Report management routes
+        Route::post('/users/{user}/increase-reports', [AdminController::class, 'increaseReportCount']);
+        Route::post('/users/{user}/decrease-reports', [AdminController::class, 'decreaseReportCount']);
+        Route::post('/users/{user}/reset-reports', [AdminController::class, 'resetReportCount']);
+
+        Route::get('/services/pending', [ServiceController::class, 'pendingServices']);
+        Route::post('/services/{service}/approve', [ServiceController::class, 'approveService']);
+        Route::post('/services/{service}/reject', [ServiceController::class, 'rejectService']);
+        Route::get('/orders/rejected', [OrderController::class, 'rejectedOrders']);
+
+    });
+
+
 // Protected routes (require authentication)
 Route::middleware('auth:sanctum')->group(function () {
     // Auth
@@ -79,21 +96,7 @@ Route::post('/verify-code', [VerificationController::class, 'verifyEmail']);
     Route::put('/notifications/{notification}/mark-as-seen', [NotificationController::class, 'markAsSeen']);
     
         // Admin routes
-    Route::prefix('admin')->group(function () {
-        Route::apiResource('admins', AdminController::class);
-        
-        // Report management routes
-        Route::post('/users/{user}/increase-reports', [AdminController::class, 'increaseReportCount']);
-        Route::post('/users/{user}/decrease-reports', [AdminController::class, 'decreaseReportCount']);
-        Route::post('/users/{user}/reset-reports', [AdminController::class, 'resetReportCount']);
-
-        Route::get('/services/pending', [ServiceController::class, 'pendingServices']);
-        Route::post('/services/{service}/approve', [ServiceController::class, 'approveService']);
-        Route::post('/services/{service}/reject', [ServiceController::class, 'rejectService']);
-        Route::get('/orders/rejected', [OrderController::class, 'rejectedOrders']);
-
-    });
-
+    
     // Admins (admin only)
     // Route::middleware('can:admin')->group(function () {
     //     Route::apiResource('admins', AdminController::class);

@@ -11,9 +11,11 @@ class Notification extends Model
 
     protected $fillable = [
         'user_id',
-        'service_id',  // Added service relationship
+        'service_id',
+        'order_id',
+        'title',
         'content',
-        'type',       // Added type field (e.g., 'service_approved')
+        'type',
         'is_seen',
     ];
 

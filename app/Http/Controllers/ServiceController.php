@@ -7,6 +7,7 @@ use App\Models\Image;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
+use App\Services\NotificationService;
 
 class ServiceController extends Controller
 {
@@ -17,16 +18,13 @@ class ServiceController extends Controller
 
     public function index(Request $request)
     {
-        $query = Service::with(['user', 'category', 'images'])
-            ->latest();
+        $query = Service::with(['user', 'category', 'images'])->latest();
             
         if ($request->has('status')) {
-            // Only allow status filtering if user is admin
             if (Gate::allows('admin-action')) {
                 $query->where('status', $request->status);
             }
         } elseif (!Gate::allows('admin-action')) {
-            // Regular users only see accepted services
             $query->where('status', 'accepted');
         }
             
@@ -63,7 +61,6 @@ class ServiceController extends Controller
                 $image = $request->file('path');
                 $path = $image->store('public/images');
                 $url = asset(str_replace('public', 'storage', $path));
-
                 $service->images()->create(['url' => $url]);
             }
 
@@ -82,7 +79,6 @@ class ServiceController extends Controller
 
     public function show(Service $service)
     {
-        // Only show pending services to admins or service owner
         if ($service->status === 'pending' && 
             !Gate::allows('admin-action') && 
             !Gate::allows('view-service', $service)) {
@@ -115,7 +111,6 @@ class ServiceController extends Controller
             ], 422);
         }
 
-        // Only admins can change status
         if ($request->has('status') && !Gate::allows('admin-action')) {
             abort(403, 'Only admins can change service status');
         }
@@ -145,11 +140,9 @@ class ServiceController extends Controller
         }
     }
 
-    // Admin-only methods
     public function pendingServices()
     {
         Gate::authorize('admin-action');
-        
         return Service::with(['user', 'category', 'images'])
             ->where('status', 'pending')
             ->latest()
@@ -162,6 +155,9 @@ class ServiceController extends Controller
         
         $service->update(['status' => 'accepted']);
         
+        // Send notification to service owner
+        NotificationService::createServiceStatusNotification($service->user, $service, 'accepted');
+        
         return response()->json([
             'message' => 'Service approved successfully',
             'service' => $service->fresh()
@@ -173,6 +169,9 @@ class ServiceController extends Controller
         Gate::authorize('admin-action');
         
         $service->update(['status' => 'rejected']);
+        
+        // Send notification to service owner
+        NotificationService::createServiceStatusNotification($service->user, $service, 'rejected');
         
         return response()->json([
             'message' => 'Service rejected successfully',
