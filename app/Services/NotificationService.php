@@ -91,4 +91,20 @@ class NotificationService
 
         return $notification;
     }
+
+    public static function createServiceExchangeNotification(Order $order, Service $providedService)
+{
+    $content = "New service exchange request for your service: {$order->service->title}. " .
+               "The buyer is offering: {$providedService->title}";
+
+    return self::createNotification([
+        'user_id' => $order->service->user_id,
+        'order_id' => $order->id,
+        'service_id' => $providedService->id,
+        'title' => 'Service Exchange Request',
+        'content' => $content,
+        'type' => 'service_exchange_request'
+    ]);
+}
+
 }

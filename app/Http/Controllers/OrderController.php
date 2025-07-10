@@ -24,26 +24,61 @@ class OrderController extends Controller
             ->paginate(10);
     }
 
-    public function store(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'service_id' => 'required|exists:services,id',
-            'provided_service_id' => 'nullable|exists:services,id',
-            'start_date' => 'required|date|after_or_equal:today',
-            'end_date' => 'nullable|date|after:start_date',
-        ]);
+public function store(Request $request)
+{
+    $validator = Validator::make($request->all(), [
+        'service_id' => 'required|exists:services,id',
+        'provided_service_id' => 'nullable|exists:services,id',
+        'start_date' => 'required|date|after_or_equal:today',
+        'end_date' => 'nullable|date|after:start_date',
+    ]);
 
-        if ($validator->fails()) {  
+    if ($validator->fails()) {  
+        return response()->json([
+            'message' => 'Validation error',
+            'errors' => $validator->errors()
+        ], 422);
+    }
+
+    $userId = auth()->id();
+    $user = User::with('wallet')->findOrFail($userId);
+    $service = Service::with('user')->findOrFail($request->service_id);
+    $providedService = $request->provided_service_id 
+        ? Service::findOrFail($request->provided_service_id)
+        : null;
+
+    // Validate service-for-service conditions
+    if ($providedService) {
+        // Ensure the provided service belongs to the buyer
+        if ($providedService->user_id !== $userId) {
             return response()->json([
-                'message' => 'Validation error',
-                'errors' => $validator->errors()
-            ], 422);
+                'message' => 'You can only offer your own services for exchange'
+            ], 403);
         }
 
-        $userId = auth()->id();
-        $user = User::with('wallet')->findOrFail($userId);
-        $service = Service::with('user')->findOrFail($request->service_id);
+        // Ensure not trying to exchange the same service
+        if ($providedService->id === $service->id) {
+            return response()->json([
+                'message' => 'Cannot exchange the same service'
+            ], 400);
+        }
+
+        // Get durations from both services
+        $serviceDuration = $service->exchange_time ?? '1 day'; // default if not set
+        $providedServiceDuration = $providedService->exchange_time ?? '1 day';
         
+        // Parse durations to days
+        $serviceDays = $this->durationToDays($serviceDuration);
+        $providedServiceDays = $this->durationToDays($providedServiceDuration);
+        
+        // Use the longer duration
+        $longerDurationDays = max($serviceDays, $providedServiceDays);
+        
+        // Calculate dates
+        $startDate = now()->startOfDay(); // Today at 00:00:00
+        $endDate = $startDate->copy()->addDays($longerDurationDays);
+    } else {
+        // For cash payments, check wallet balance
         if ($user->wallet->balance < $service->price) {
             return response()->json([
                 'message' => 'Insufficient wallet balance to create this order',
@@ -51,17 +86,79 @@ class OrderController extends Controller
                 'current_balance' => $user->wallet->balance
             ], 400);
         }
-
-        $order = Order::create(array_merge(
-            $validator->validated(),
-            ['user_id' => $userId, 'status' => 'pending']
-        ));
-
-        // Send notification to seller
-        NotificationService::createSellerOrderNotification($order, 'created');
-
-        return response()->json($order, 201);
+        
+        // Use provided dates for regular orders
+        $startDate = $request->start_date;
+        $endDate = $request->end_date;
     }
+
+    $order = Order::create([
+        'user_id' => $userId,
+        'service_id' => $request->service_id,
+        'provided_service_id' => $request->provided_service_id,
+        'start_date' => $startDate,
+        'end_date' => $endDate,
+        'status' => 'pending',
+        'is_service_exchange' => (bool)$providedService,
+    ]);
+
+    // Send appropriate notification
+    if ($providedService) {
+        NotificationService::createServiceExchangeNotification(
+            $order, 
+            $providedService,
+            $longerDurationDays
+        );
+    } else {
+        NotificationService::createSellerOrderNotification($order, 'created');
+    }
+
+    return response()->json([
+        'message' => 'Order created successfully',
+        'order' => $order->load(['service', 'providedService']),
+        'duration_days' => $providedService ? $longerDurationDays : null,
+    ], 201);
+}
+
+// Helper method to convert duration string to days
+protected function durationToDays(string $duration): int
+{
+    $units = [
+        'hour' => 1/24,
+        'day' => 1,
+        'week' => 7,
+        'month' => 30, // approximation
+    ];
+    
+    foreach ($units as $unit => $days) {
+        if (str_contains($duration, $unit)) {
+            $value = (int) preg_replace('/[^0-9]/', '', $duration);
+            return (int) ceil($value * $days); // Round up to full days
+        }
+    }
+    
+    return 1; // default to 1 day if format not recognized
+}
+
+// Helper method to convert duration string to minutes
+protected function durationToMinutes(string $duration): int
+{
+    $units = [
+        'hour' => 60,
+        'day' => 1440,
+        'week' => 10080,
+        'month' => 43200, // approx 30 days
+    ];
+    
+    foreach ($units as $unit => $minutes) {
+        if (str_contains($duration, $unit)) {
+            $value = (int) preg_replace('/[^0-9]/', '', $duration);
+            return $value * $minutes;
+        }
+    }
+    
+    return 60; // default to 1 hour if format not recognized
+}
 
     public function show(Order $order)
     {
