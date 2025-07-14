@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Category;
 use App\Models\Service;
 use App\Models\Image;
 use Illuminate\Http\Request;
@@ -18,16 +19,22 @@ class ServiceController extends Controller
 
     public function index(Request $request)
     {
-        $query = Service::with(['user', 'category', 'images'])->latest();
-            
-        if ($request->has('status')) {
-            if (Gate::allows('admin-action')) {
-                $query->where('status', $request->status);
-            }
-        } elseif (!Gate::allows('admin-action')) {
-            $query->where('status', 'accepted');
+
+        $categoriesId = Category::where('name', $request->name)->pluck('id');
+        if (count($categoriesId) == 0) {
+            $query = Service::with(['user', 'category', 'images'])->latest();
+        } else {
+            $query = Service::where('category_id', $categoriesId[0])->with(['user', 'category', 'images'])->latest();
         }
-            
+
+        // if ($request->has('status')) {
+        //     if (Gate::allows('admin-action')) {
+        //         $query->where('status', $request->status);
+        //     }
+        // } elseif (!Gate::allows('admin-action')) {
+        //     $query->where('status', 'accepted');
+        // }
+
         return $query->paginate(10);
     }
 
@@ -68,7 +75,6 @@ class ServiceController extends Controller
                 $service->load(['user', 'category', 'images']),
                 201
             );
-
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Service creation failed',
@@ -79,12 +85,19 @@ class ServiceController extends Controller
 
     public function show(Service $service)
     {
-        if ($service->status === 'pending' && 
-            !Gate::allows('admin-action') && 
-            !Gate::allows('view-service', $service)) {
-            abort(403, 'This service is pending approval');
-        }
+        return $service->status;
 
+        // if (
+        //     $service->status === 'pending' &&
+        //     !Gate::allows('admin-action') &&
+        //     !Gate::allows('view-service', $service)
+        // ) {
+        if (
+            $service->status === 'pending'
+        ) {
+            // return 'test';
+            return response()->json('This service is pending approval', 403);
+        }
         return response()->json(
             $service->load(['user', 'category', 'images', 'exchangeWithCategory'])
         );
@@ -131,7 +144,6 @@ class ServiceController extends Controller
             return response()->json([
                 'message' => 'Service deleted successfully'
             ]);
-
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Failed to delete service',
@@ -152,12 +164,12 @@ class ServiceController extends Controller
     public function approveService(Service $service)
     {
         Gate::authorize('admin-action');
-        
+
         $service->update(['status' => 'accepted']);
-        
+
         // Send notification to service owner
         NotificationService::createServiceStatusNotification($service->user, $service, 'accepted');
-        
+
         return response()->json([
             'message' => 'Service approved successfully',
             'service' => $service->fresh()
@@ -167,12 +179,12 @@ class ServiceController extends Controller
     public function rejectService(Service $service)
     {
         Gate::authorize('admin-action');
-        
+
         $service->update(['status' => 'rejected']);
-        
+
         // Send notification to service owner
         NotificationService::createServiceStatusNotification($service->user, $service, 'rejected');
-        
+
         return response()->json([
             'message' => 'Service rejected successfully',
             'service' => $service->fresh()

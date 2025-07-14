@@ -33,28 +33,29 @@ Route::post('/login', [AuthController::class, 'login']);
 // Categories (public access)
 Route::apiResource('categories', CategoryController::class);
 
+Route::get('/service/{id}', [ServiceController::class, 'show']);
+
 Route::apiResource('services', ServiceController::class);
-Route::get('/services',[ServiceController::class,'index']);
+Route::get('/services', [ServiceController::class, 'index']);
 
 Route::post('/verify-email', [VerificationController::class, 'sendVerificationCode']);
 Route::post('/resend-verification', [VerificationController::class, 'resendCode']);
 
 
 Route::prefix('admin')->group(function () {
-        // Route::apiResource('admins', AdminController::class);
-        Route::post('/register',[AdminController::class,'store']);
-        // Report management routes
-        Route::post('/users/{user}/increase-reports', [AdminController::class, 'increaseReportCount']);
-        Route::post('/users/{user}/decrease-reports', [AdminController::class, 'decreaseReportCount']);
-        Route::post('/users/{user}/reset-reports', [AdminController::class, 'resetReportCount']);
-        Route::post('/users/{user}/block', [AdminController::class, 'blockUser']); // New block route
+    // Route::apiResource('admins', AdminController::class);
+    Route::post('/register', [AdminController::class, 'store']);
+    // Report management routes
+    Route::post('/users/{user}/increase-reports', [AdminController::class, 'increaseReportCount']);
+    Route::post('/users/{user}/decrease-reports', [AdminController::class, 'decreaseReportCount']);
+    Route::post('/users/{user}/reset-reports', [AdminController::class, 'resetReportCount']);
+    Route::post('/users/{user}/block', [AdminController::class, 'blockUser']); // New block route
 
-        Route::get('/services/pending', [ServiceController::class, 'pendingServices']);
-        Route::post('/services/{service}/approve', [ServiceController::class, 'approveService']);
-        Route::post('/services/{service}/reject', [ServiceController::class, 'rejectService']);
-        Route::get('/orders/rejected', [OrderController::class, 'rejectedOrders']);
-
-    });
+    Route::get('/services/pending', [ServiceController::class, 'pendingServices']);
+    Route::post('/services/{service}/approve', [ServiceController::class, 'approveService']);
+    Route::post('/services/{service}/reject', [ServiceController::class, 'rejectService']);
+    Route::get('/orders/rejected', [OrderController::class, 'rejectedOrders']);
+});
 
 
 // Protected routes (require authentication)
@@ -62,7 +63,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Auth
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
-Route::post('/verify-code', [VerificationController::class, 'verifyEmail']);  
+    Route::post('/verify-code', [VerificationController::class, 'verifyEmail']);
 
     // Users
     Route::apiResource('users', UserController::class)->except(['store']);
@@ -74,30 +75,29 @@ Route::post('/verify-code', [VerificationController::class, 'verifyEmail']);
 
     // Profiles
     Route::apiResource('profiles', ProfileController::class)->only(['show', 'update']);
-    
+
     // Services
     // Route::apiResource('services', ServiceController::class);
     Route::post('/services', [ServiceController::class, 'store']);
     Route::patch('/services', [ServiceController::class, 'update']);
     Route::delete('/services', [ServiceController::class, 'destroy']);
-    Route::get('/services/{id}', [ServiceController::class, 'show']);
 
     Route::post('/services/{service}/images', [ImageController::class, 'store']);
     Route::apiResource('services.images', ImageController::class)->only(['index', 'show', 'destroy']);
-    
+
     // Orders
     Route::apiResource('orders', OrderController::class);
     Route::apiResource('orders.files', FileController::class)->only(['index', 'store']);
-    
+
     // Files
-    Route::apiResource('files', FileController::class)->only(['show', 'destroy','store']);
-    Route::get('/download/{id}',[FileController::class,'download']);
+    Route::apiResource('files', FileController::class)->only(['show', 'destroy', 'store']);
+    Route::get('/download/{id}', [FileController::class, 'download']);
     // Notifications
     Route::apiResource('notifications', NotificationController::class)->only(['index', 'show', 'destroy']);
     Route::put('/notifications/{notification}/mark-as-seen', [NotificationController::class, 'markAsSeen']);
-    
-        // Admin routes
-    
+
+    // Admin routes
+
     // Admins (admin only)
     // Route::middleware('can:admin')->group(function () {
     //     Route::apiResource('admins', AdminController::class);

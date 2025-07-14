@@ -16,108 +16,107 @@ use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
-public function register(Request $request)
-{
-    $validator = Validator::make($request->all(), [
-        // User fields
-        'name' => 'required|string|max:255',
-        'email' => 'required|string|email|max:255|unique:users',
-        'password' => ['required', Rules\Password::defaults()],
-        'phone_number' => 'required|numeric|digits_between:9,11|unique:users,phone_number',
-        'role'=>'required',
-        // Profile fields
-        'description' => 'required|string|max:1000',
-        'picture' => 'image|max:5120', // 5MB max
-        'experience_years' => [
-            'required',
-            'integer',
-            'min:0',
-            'max:70',
-            function ($attribute, $value, $fail) use ($request) {
-                if ($request->age - $value <= 14) {
-                    $fail('The age must be at least 15 years greater than years of experience.');
+    public function register(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            // User fields
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => ['required', Rules\Password::defaults()],
+            'phone_number' => 'required|numeric|digits_between:9,11|unique:users,phone_number',
+            'role' => 'required',
+            // Profile fields
+            'description' => 'required|string|max:1000',
+            'picture' => 'nullable|max:5120', // 5MB max
+            'experience_years' => [
+                'required',
+                'integer',
+                'min:0',
+                'max:70',
+                function ($attribute, $value, $fail) use ($request) {
+                    if ($request->age - $value <= 14) {
+                        $fail('The age must be at least 15 years greater than years of experience.');
+                    }
                 }
-            }
-        ],
-        'age' => [
-            'required',
-            'integer',
-            'min:18',
-            'max:100',
-            function ($attribute, $value, $fail) use ($request) {
-                if ($value - $request->experience_years <= 14) {
-                    $fail('The age must be at least 18 years greater than years of experience.');
+            ],
+            'age' => [
+                'required',
+                'integer',
+                'min:18',
+                'max:100',
+                function ($attribute, $value, $fail) use ($request) {
+                    if ($value - $request->experience_years <= 14) {
+                        $fail('The age must be at least 18 years greater than years of experience.');
+                    }
                 }
-            }
-        ],
-        'location' => 'required|string|max:255'
-    ]);
-
-    // Rest of the method remains the same...
-    if ($validator->fails()) {
-        return response()->json([
-            'message' => 'Validation error',
-            'errors' => $validator->errors()
-        ], 422);
-    }
-
-    try {
-        DB::beginTransaction();
-
-        $validatedData = $validator->validated();
-
-        // Create user
-        $user = User::create([
-            'name' => $validatedData['name'],
-            'email' => $validatedData['email'],
-            'password' => Hash::make($validatedData['password']),
-            'phone_number' => $validatedData['phone_number'],
-            'verification_code' => Str::random(6),
-            'verification_code_sent_at' => now(),
-            'role'=> $validatedData['role']
+            ],
+            'location' => 'required|string|max:255'
         ]);
 
-        Mail::to($user->email)->send(new VerificationCodeMail($user->verification_code));
-
-        // Handle profile picture upload
-        $picturePath = null;
-        if ($request->hasFile('picture')) {
-            $picturePath = $request->file('picture')->store('profiles', 'public');
+        // Rest of the method remains the same...
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation error',
+                'errors' => $validator->errors()
+            ], 422);
         }
 
-        // Create profile
-        $user->profile()->create([
-            'description' => $validatedData['description'],
-            'picture_url' => $picturePath ? Storage::url($picturePath) : null,
-            'experience_years' => $validatedData['experience_years'],
-            'age' => $validatedData['age'],
-            'location' => $validatedData['location']
-        ]);
+        try {
+            DB::beginTransaction();
 
-        // Create wallet
-        $user->wallet()->create(['balance' => 0]);
+            $validatedData = $validator->validated();
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+            // Create user
+            $user = User::create([
+                'name' => $validatedData['name'],
+                'email' => $validatedData['email'],
+                'password' => Hash::make($validatedData['password']),
+                'phone_number' => $validatedData['phone_number'],
+                'verification_code' => Str::random(6),
+                'verification_code_sent_at' => now(),
+                'role' => $validatedData['role']
+            ]);
 
-        DB::commit();
+            Mail::to($user->email)->send(new VerificationCodeMail($user->verification_code));
 
-        return response()->json([
-            'message' => 'User registered successfully',
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-            'user' => $user->load(['wallet', 'profile'])
-        ], 201);
+            // Handle profile picture upload
+            $picturePath = null;
+            if ($request->hasFile('picture')) {
+                $picturePath = $request->file('picture')->store('profiles', 'public');
+            }
 
-    } catch (\Exception $e) {
-        DB::rollBack();
-        return response()->json([
-            'message' => 'Registration failed',
-            'error' => $e->getMessage()
-        ], 500);
+            // Create profile
+            $user->profile()->create([
+                'description' => $validatedData['description'],
+                'picture_url' => $picturePath ? Storage::url($picturePath) : null,
+                'experience_years' => $validatedData['experience_years'],
+                'age' => $validatedData['age'],
+                'location' => $validatedData['location']
+            ]);
+
+            // Create wallet
+            $user->wallet()->create(['balance' => 0]);
+
+            $token = $user->createToken('auth_token')->plainTextToken;
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'User registered successfully',
+                'access_token' => $token,
+                'token_type' => 'Bearer',
+                'user' => $user->load(['wallet', 'profile'])
+            ], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Registration failed',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
-}
 
-      public function login(Request $request)
+    public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'email' => 'required|email',
