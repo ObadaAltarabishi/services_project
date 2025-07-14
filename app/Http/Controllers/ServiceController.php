@@ -18,15 +18,15 @@ class ServiceController extends Controller
 
     public function index(Request $request)
     {
-        $query = Service::with(['user', 'category', 'images'])->latest();
+         $query = Service::with(['user', 'category', 'images'])->latest();
             
-        if ($request->has('status')) {
-            if (Gate::allows('admin-action')) {
-                $query->where('status', $request->status);
-            }
-        } elseif (!Gate::allows('admin-action')) {
-            $query->where('status', 'accepted');
-        }
+        //if ($request->has('status')) {
+            //if (Gate::allows('admin-action')) {
+             //   $query->where('status', $request->status);
+          //  }
+        //} elseif (!Gate::allows('admin-action')) {
+        //    $query->where('status', 'accepted');
+        //}
             
         return $query->paginate(10);
     }

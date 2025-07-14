@@ -13,7 +13,7 @@ return new class extends Migration
             $table->string('name');
             $table->text('description');
             $table->decimal('price', 10, 2);
-            $table->time('exchange_time')->nullable();
+            $table->date('exchange_time')->nullable();
             $table->enum('status', ['pending', 'accepted', 'rejected'])->default('pending');
             // العلاقة مع المستخدم الذي أنشأ الخدمة
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
