@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Profile;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
@@ -13,12 +14,18 @@ class ProfileController extends Controller
         $this->middleware('auth:sanctum');
     }
 
+    public function index(request $request)
+    {
+        $user = User::where('id', $request->id)->with('Profile', 'Services')->first();
+        // $user = \Auth::user()->with(['profile']);
+        return response()->json($user, 200);
+    }
     public function show(Profile $profile)
     {
         if (!Gate::allows('view-profile', $profile)) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
-
+        // $user = \Auth::user()->with(['profile']);
         return $profile->load('user');
     }
 

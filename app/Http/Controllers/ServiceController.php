@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Category;
 use App\Models\Service;
 use App\Models\Image;
 use Illuminate\Http\Request;
@@ -18,21 +19,22 @@ class ServiceController extends Controller
 
     public function index(Request $request)
     {
-         $query = Service::with(['user', 'category', 'images'])->latest();
+        $query = Service::with(['user', 'category', 'images'])->latest();
             
-        //if ($request->has('status')) {
-            //if (Gate::allows('admin-action')) {
-             //   $query->where('status', $request->status);
-          //  }
-        //} elseif (!Gate::allows('admin-action')) {
-        //    $query->where('status', 'accepted');
-        //}
+        if ($request->has('status')) {
+            if (Gate::allows('admin-action')) {
+                $query->where('status', $request->status);
+            }
+        } elseif (!Gate::allows('admin-action')) {
+            $query->where('status', 'accepted');
+        }
             
         return $query->paginate(10);
     }
 
     public function store(Request $request)
     {
+        
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'description' => 'required|string',
@@ -77,21 +79,35 @@ class ServiceController extends Controller
         }
     }
 
-    public function show(Service $service)
-    {
-        if ($service->status === 'pending' && 
-            !Gate::allows('admin-action') && 
-            !Gate::allows('view-service', $service)) {
-            abort(403, 'This service is pending approval');
-        }
+public function show(Service $service)
+{
+    // If service is pending and user is neither admin nor owner
+    if ($service->status === 'pending' && 
+        !Gate::allows('admin-action') && 
+        !Gate::allows('view-service', $service)) {
+        return response()->json([
+            'message' => 'wating the admin to approve'
+        ], 403);
+    }
 
+    // If service is accepted, or user is admin/owner
+    if ($service->status === 'accepted' || 
+        Gate::allows('admin-action') || 
+        Gate::allows('view-service', $service)) {
         return response()->json(
             $service->load(['user', 'category', 'images', 'exchangeWithCategory'])
         );
     }
 
+    // For any other case (like rejected services)
+    return response()->json([
+        'message' => 'Service not available'
+    ], 404);
+}
+
     public function update(Request $request, Service $service)
     {
+        
         Gate::authorize('update-service', $service);
 
         $validator = Validator::make($request->all(), [
@@ -152,12 +168,12 @@ class ServiceController extends Controller
     public function approveService(Service $service)
     {
         Gate::authorize('admin-action');
-        
+
         $service->update(['status' => 'accepted']);
-        
+
         // Send notification to service owner
         NotificationService::createServiceStatusNotification($service->user, $service, 'accepted');
-        
+
         return response()->json([
             'message' => 'Service approved successfully',
             'service' => $service->fresh()
@@ -167,12 +183,12 @@ class ServiceController extends Controller
     public function rejectService(Service $service)
     {
         Gate::authorize('admin-action');
-        
+
         $service->update(['status' => 'rejected']);
-        
+
         // Send notification to service owner
         NotificationService::createServiceStatusNotification($service->user, $service, 'rejected');
-        
+
         return response()->json([
             'message' => 'Service rejected successfully',
             'service' => $service->fresh()

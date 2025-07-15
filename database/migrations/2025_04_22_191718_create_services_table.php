@@ -13,20 +13,20 @@ return new class extends Migration
             $table->string('name');
             $table->text('description');
             $table->decimal('price', 10, 2);
-            $table->date('exchange_time')->nullable();
+            $table->date-time('exchange_time')->nullable();
             $table->enum('status', ['pending', 'accepted', 'rejected'])->default('pending');
             // العلاقة مع المستخدم الذي أنشأ الخدمة
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            
+
             // العلاقة مع الفئة الأساسية للخدمة
             $table->foreignId('category_id')->constrained()->onDelete('cascade');
-            
+
             // العلاقة مع الفئة التي يمكن استبدال الخدمة بها (بدلاً من الخدمة)
             $table->foreignId('exchange_with_category_id')
-                  ->nullable()
-                  ->constrained('categories')
-                  ->onDelete('set null');
-            
+                ->nullable()
+                ->constrained('categories')
+                ->onDelete('set null');
+
             $table->timestamps();
         });
     }
