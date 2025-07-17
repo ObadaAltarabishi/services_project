@@ -20,6 +20,19 @@ class ServiceController extends Controller
     public function index(Request $request)
     {
         $query = Service::with(['user', 'category', 'images'])->latest();
+        if ($request->has('search')){
+            $query->where('name','like','%'.$request->search.'%');
+        }
+       // Price sorting - takes priority over default sorting
+       if ($request->has('sort_price')) {
+        $sortDirection = strtolower($request->sort_price) === 'desc' ? 'desc' : 'asc';
+        $query->orderBy('price', $sortDirection);
+        
+        } 
+    // Default sorting (only applied if no price sort specified)
+    else {
+        $query->latest();
+    }
             
         if ($request->has('status')) {
             if (Gate::allows('admin-action')) {
@@ -39,7 +52,7 @@ class ServiceController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'required|string',
             'price' => 'required|numeric|min:0',
-            'exchange_time' => 'nullable',
+            'exchange_time' => 'required',
             'exchange_with_service_id' => 'nullable|exists:services,id',
             'category_id' => 'required|exists:categories,id',
             'path' => 'required|file|image|max:10240',
@@ -114,7 +127,7 @@ public function show(Service $service)
             'name' => 'sometimes|string|max:255',
             'description' => 'sometimes|string',
             'price' => 'sometimes|numeric|min:0',
-            'exchange_time' => 'nullable|date_format:H:i:s',
+            'exchange_time' => 'nullable|date_format:Y-m-d H:i:s|after_or_equal:',
             'exchange_with_service_id' => 'nullable|exists:services,id',
             'category_id' => 'sometimes|exists:categories,id',
             'status' => 'sometimes|in:pending,accepted,rejected'

@@ -14,13 +14,13 @@ class WalletPolicy
     public function viewAny(User $user): bool
     {
         // Only admins can view all wallets
-        return false; // Make sure you have isAdmin() method in User model
+        return $user->isAdmin();
     }
 
     /**
      * Determine whether the user can view the wallet.
      */
-    public function view(User $user, Wallet $wallet): bool
+    public function viwe(User $user, Wallet $wallet): bool
     {
         // Only wallet owner can view
         return $user->id === $wallet->user_id;
@@ -31,8 +31,8 @@ class WalletPolicy
      */
     public function create(User $user): bool
     {
-        // Users can only create wallets through registration
-        return true;
+        // Wallets should only be created during registration
+        return false;
     }
 
     /**
@@ -41,8 +41,7 @@ class WalletPolicy
     public function update(User $user, Wallet $wallet): bool
     {
         // Only wallet owner can update
-        // return $user->id === $wallet->user_id;
-        return true;
+        return $user->id === $wallet->user_id;
     }
 
     /**
@@ -50,16 +49,16 @@ class WalletPolicy
      */
     public function delete(User $user, Wallet $wallet): bool
     {
-        // Wallets shouldn't be deletable (or only by admins)
+        // Only admins can delete wallets
         return $user->isAdmin();
     }
 
     /**
-     * Additional method for adding funds
+     * Determine whether the user can add funds to the wallet.
      */
-    public function addFunds(User $user, Wallet $wallet): bool
+    // In App\Policies\WalletPolicy.php
+   public function addFunds(User $user, Wallet $wallet)
     {
-        // Only wallet owner can add funds
-        return $user->id === $wallet->user_id;
+      return $user->id === $wallet->user_id;
     }
 }

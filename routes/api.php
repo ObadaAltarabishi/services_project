@@ -68,10 +68,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // Users
     Route::apiResource('users', UserController::class)->except(['store']);
     // Wallets
-    // Route::get('/wallet/{id}', [WalletController::class, 'show']);
+     Route::get('/wallet/{id}', [WalletController::class, 'show']);
     // Route::put('/wallet/{id}', [WalletController::class, 'update']);
-    Route::apiResource('wallet', WalletController::class);
-    // Route::patch('/wallet/add-funds/{id}', [WalletController::class, 'addFunds']);
+    //Route::apiResource('wallet', WalletController::class);
+     Route::post('/wallet/add-funds/{id}', [WalletController::class, 'addFunds']);
 
     // Profiles
     Route::apiResource('profiles', ProfileController::class)->only(['show', 'update']);
