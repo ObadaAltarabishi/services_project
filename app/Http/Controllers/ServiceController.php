@@ -26,13 +26,16 @@ class ServiceController extends Controller
        // Price sorting - takes priority over default sorting
        if ($request->has('sort_price')) {
         $sortDirection = strtolower($request->sort_price) === 'desc' ? 'desc' : 'asc';
-        $query->orderBy('price', $sortDirection);
+        if("asc")
+         $query->sortBy('price',$sortDirection);
         
-        } 
+        } else{
+            $query->sortByDesc('price',$sortDirection);
+        }
     // Default sorting (only applied if no price sort specified)
-    else {
-        $query->latest();
-    }
+    // else {
+    //     $query->latest();
+    // }
             
         if ($request->has('status')) {
             if (Gate::allows('admin-action')) {
