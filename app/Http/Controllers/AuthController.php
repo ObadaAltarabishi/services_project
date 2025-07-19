@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\VerificationCodeMail;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\URL;
+
 
 class AuthController extends Controller
 {
@@ -81,14 +83,19 @@ class AuthController extends Controller
 
             // Handle profile picture upload
             $picturePath = null;
-            if ($request->hasFile('picture')) {
-                $picturePath = $request->file('picture')->store('profiles', 'public');
-            }
+            // if ($request->hasFile('picture')) {
+            $name = $request->picture->getClientOriginalName();
+            $newName = rand(9999999999, 99999999999) . $name;
+            $request->picture->move(public_path('images'), $newName);
+
+            $picturePath = URl::to('images', $newName);
+            // $picturePath = $request->file('picture')->store('profiles', 'public');
+            // }
 
             // Create profile
             $user->profile()->create([
                 'description' => $validatedData['description'],
-                'picture_url' => $picturePath ? Storage::url($picturePath) : null,
+                'picture_url' => $picturePath ? $picturePath : null,
                 'experience_years' => $validatedData['experience_years'],
                 'age' => $validatedData['age'],
                 'location' => $validatedData['location']

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Profile;
 use App\Models\User;
 use App\Models\Service;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
@@ -20,21 +21,20 @@ class ProfileController extends Controller
     public function index(request $request)
     {
         $user = User::where('id', $request->id)->with('Profile', 'Services')->first();
-        // $user = \Auth::user()->with(['profile']);
         return response()->json($user, 200);
     }
-  public function show(Profile $profile)
+    public function show(Profile $profile)
     {
         if (!Gate::allows('view-profile', $profile)) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        return $profile->load(['user.services' => function($query) {
+        return $profile->load(['user.services' => function ($query) {
             // Only show accepted services to non-admin viewers
             if (!auth()->user()->isAdmin()) {
                 $query->where('status', 'accepted');
             }
-            
+
             // Eager load additional relationships
             $query->with(['category', 'images']);
         }]);
@@ -45,7 +45,6 @@ class ProfileController extends Controller
         if (!Gate::allows('update-profile', $profile)) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
-
         $request->validate([
             'description' => 'sometimes|string',
             'picture_url' => 'sometimes|url',
@@ -53,12 +52,21 @@ class ProfileController extends Controller
             'age' => 'sometimes|integer|min:0',
             'location' => 'sometimes|string',
         ]);
-
+        if (is_null($request->picture_url ?? null)) {
+            unset($request->picture_url);
+        } else {
+            $name = $request->picture_url->getClientOriginalName();
+            $newName = rand(9999999999, 99999999999) . $name;
+            $request->picture_url->move(public_path('images'), $newName);
+            $request->merge([
+                'picture_url' => URL::to('images/' . $newName)
+            ]);
+        }
         $profile->update($request->all());
 
         return $profile;
     }
-        
+
     /*public function update(Request $request, Profile $profile)
 {
     // Verify the authenticated user owns this profile
@@ -104,7 +112,7 @@ class ProfileController extends Controller
             if ($profile->picture_url) {
                 Storage::delete($profile->picture_url);
             }
-            
+
             $path = $request->file('picture')->store('profile_images', 'public');
             $validatedData['picture_url'] = Storage::url($path);
         }
