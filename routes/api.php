@@ -87,7 +87,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('services.images', ImageController::class)->only(['index', 'show', 'destroy']);
 
     // Orders
-    Route::apiResource('orders', OrderController::class);
+    Route::get('orders', [OrderController::class,'index']);
+    Route::patch('orders/{id}', [OrderController::class,'update']);
     Route::apiResource('orders.files', FileController::class)->only(['index', 'store']);
 
     // Files

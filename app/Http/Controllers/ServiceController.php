@@ -54,7 +54,7 @@ class ServiceController extends Controller
             'description' => 'required|string',
             'price' => 'required|numeric|min:0',
             'exchange_time' => 'required',
-            'exchange_with_service_id' => 'nullable|exists:services,id',
+            'exchange_with_category_id' => 'nullable|exists:categories,id',
             'category_id' => 'required|exists:categories,id',
             'path' => 'nullable|max:10240',
         ]);

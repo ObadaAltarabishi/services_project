@@ -14,7 +14,7 @@ return new class extends Migration
             $table->foreignId('service_id')->constrained()->onDelete('cascade');
             $table->string('status')->default('pending');
             $table->foreignId('provided_service_id')->nullable()->constrained('services')->onDelete('set null');
-            $table->date('start_date');
+            $table->datet('start_date');
             $table->date('end_date')->nullable();
             $table->timestamps();
         });
