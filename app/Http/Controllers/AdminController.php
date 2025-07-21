@@ -24,11 +24,19 @@ class AdminController extends Controller
         return Admin::paginate(10);
     }
 
+    public function indexUsers()
+    {
+        $users = User::where('role', 'user')->get();
+        return response()->json([
+            'message' => 'Success',
+            'data' => $users
+        ], 200);
+    }
     public function store(Request $request)
     {
         // Gate::authorize('admin-action');
-        
-            $validator = Validator::make($request->all(), [
+
+        $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:admins',
             'password' => ['required', Rules\Password::defaults()],
@@ -59,10 +67,10 @@ class AdminController extends Controller
     public function update(Request $request, Admin $admin)
     {
         Gate::authorize('admin-action');
-        
+
         $request->validate([
             'name' => 'sometimes|string|max:255',
-            'email' => 'sometimes|string|email|max:255|unique:admins,email,'.$admin->id,
+            'email' => 'sometimes|string|email|max:255|unique:admins,email,' . $admin->id,
             'password' => ['sometimes', Rules\Password::defaults()],
         ]);
 
@@ -86,26 +94,31 @@ class AdminController extends Controller
     // Report management methods
     public function increaseReportCount(Request $request, User $user)
     {
-        Gate::authorize('admin-action');
-        
+        // Gate::authorize('admin-action');
+
         $request->validate([
             'amount' => 'sometimes|integer|min:1|max:1',
         ]);
+        if (\Auth::user()->role == 'admin') {
+            $amount = $request->input('amount', 1);
+            $user->increment('report_count', $amount);
 
-        $amount = $request->input('amount', 1);
-        $user->increment('report_count', $amount);
-
-        return response()->json([
-            'message' => 'Report count increased successfully',
-            'user' => $user->fresh(),
-            'new_count' => $user->report_count
-        ]);
+            return response()->json([
+                'message' => 'Report count increased successfully',
+                'user' => $user->fresh(),
+                'new_count' => $user->report_count
+            ]);
+        }
+        return  response()->json([
+            'message' => 'Validation error',
+            'errors' => 'not auth'
+        ], 422);
     }
 
     public function decreaseReportCount(Request $request, User $user)
     {
         Gate::authorize('admin-action');
-        
+
         $request->validate([
             'amount' => 'sometimes|integer|min:1|max:10',
         ]);
@@ -133,10 +146,10 @@ class AdminController extends Controller
         ]);
     }
 
-        public function blockUser(User $user)
+    public function blockUser(User $user)
     {
         // Gate::authorize('admin-action');
-        
+
         $user->update(['report_count' => 2]);
 
         return response()->json([
@@ -146,5 +159,4 @@ class AdminController extends Controller
             'status' => 'blocked'
         ]);
     }
-
 }
