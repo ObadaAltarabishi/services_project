@@ -66,4 +66,5 @@ protected $fillable = [
     {
         return $this->role === 'admin'; // Simple check if role is 'admin'
     }
+    
 }

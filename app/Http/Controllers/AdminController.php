@@ -84,42 +84,57 @@ class AdminController extends Controller
     }
 
     // Report management methods
-    public function increaseReportCount(Request $request, User $user)
-    {
-        Gate::authorize('admin-action');
-        
-        $request->validate([
-            'amount' => 'sometimes|integer|min:1|max:1',
-        ]);
-
-        $amount = $request->input('amount', 1);
-        $user->increment('report_count', $amount);
-
+   public function increaseReportCount(Request $request, User $user)
+{
+    // Check admin authorization
+    if (Gate::allows('admin-action')) {
         return response()->json([
-            'message' => 'Report count increased successfully',
-            'user' => $user->fresh(),
-            'new_count' => $user->report_count
-        ]);
+            'message' => 'Unauthorized - Admin access required',
+            'success' => false
+        ], 403);
     }
+
+    $validated = $request->validate([
+        'amount' => 'sometimes|integer|min:1|max:1',
+    ]);
+
+    $amount = $validated['amount'] ?? 1;
+    $user->increment('report_count', $amount);
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Report count increased successfully',
+        'user' => $user->fresh(),
+        'new_count' => $user->fresh()->report_count
+    ]);
+}
 
     public function decreaseReportCount(Request $request, User $user)
-    {
-        Gate::authorize('admin-action');
-        
-        $request->validate([
-            'amount' => 'sometimes|integer|min:1|max:10',
-        ]);
-
-        $amount = $request->input('amount', 1);
-        $newCount = max(0, $user->report_count - $amount);
-        $user->update(['report_count' => $newCount]);
-
+{
+    // Manual admin check with better error response
+    if (Gate::allows('admin-action')) {
         return response()->json([
-            'message' => 'Report count decreased successfully',
-            'user' => $user->fresh(),
-            'new_count' => $user->report_count
-        ]);
+            'message' => 'Unauthorized - Admin access required',
+            'success' => false
+        ], 403);
     }
+
+    $validated = $request->validate([
+        'amount' => 'sometimes|integer|min:1|max:10',
+    ]);
+
+    $amount = $validated['amount'] ?? 1;
+    $newCount = max(0, $user->report_count - $amount);
+    
+    $user->update(['report_count' => $newCount]);
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Report count decreased successfully',
+        'new_count' => $user->fresh()->report_count,
+        'user' => $user->fresh()
+    ]);
+}
 
     public function resetReportCount(User $user)
     {
