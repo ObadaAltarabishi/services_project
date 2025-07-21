@@ -26,7 +26,7 @@ class AdminController extends Controller
 
     public function indexUsers()
     {
-        $users = User::where('role', 'user')->get();
+        $users = User::where('role', 'user')->where('report_count', '>=', 2)->get();
         return response()->json([
             'message' => 'Success',
             'data' => $users
@@ -94,25 +94,23 @@ class AdminController extends Controller
     // Report management methods
     public function increaseReportCount(Request $request, User $user)
     {
-        // Gate::authorize('admin-action');
-
-        $request->validate([
+        // if (!Gate::authorize('admin-action')) {
+        //     return response()->json([
+        //         'message' => 'unauth',
+        //         'success' => false
+        //     ], 403);
+        // };
+        $validated = $request->validate([
             'amount' => 'sometimes|integer|min:1|max:1',
         ]);
-        if (\Auth::user()->role == 'admin') {
-            $amount = $request->input('amount', 1);
-            $user->increment('report_count', $amount);
+        $amount = $validated['amount'] ?? 1;
+        $user->increment('report_count', $amount);
 
-            return response()->json([
-                'message' => 'Report count increased successfully',
-                'user' => $user->fresh(),
-                'new_count' => $user->report_count
-            ]);
-        }
-        return  response()->json([
-            'message' => 'Validation error',
-            'errors' => 'not auth'
-        ], 422);
+        return response()->json([
+            'message' => 'Report count increased successfully',
+            'user' => $user->fresh(),
+            'new_count' => $user->fresh()->report_count
+        ]);
     }
 
     public function decreaseReportCount(Request $request, User $user)
@@ -151,6 +149,7 @@ class AdminController extends Controller
         // Gate::authorize('admin-action');
 
         $user->update(['report_count' => 2]);
+        $user->tokens()->where('scopes')->delete();
 
         return response()->json([
             'message' => 'User blocked successfully',

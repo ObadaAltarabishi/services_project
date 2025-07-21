@@ -24,17 +24,16 @@ class ServiceController extends Controller
         if ($request->has('search')) {
             $query->where('name', 'like', '%' . $request->search . '%');
         }
-       // Price sorting - takes priority over default sorting
-       if ($request->has('sort_price')) {
-        $sortDirection = strtolower($request->sort_price) === 'desc' ? 'desc' : 'asc';
-        $query->orderBy('price', $sortDirection);
-        
-        } 
-    // Default sorting (only applied if no price sort specified)
-    else {
-        $query->latest();
-    }
-            
+        // Price sorting - takes priority over default sorting
+        if ($request->has('sort_price')) {
+            $sortDirection = strtolower($request->sort_price) === 'desc' ? 'desc' : 'asc';
+            $query->orderBy('price', $sortDirection);
+        }
+        // Default sorting (only applied if no price sort specified)
+        else {
+            $query->latest();
+        }
+
         if ($request->has('status')) {
             if (Gate::allows('admin-action')) {
                 $query->where('status', $request->status);
@@ -178,7 +177,7 @@ class ServiceController extends Controller
 
     public function pendingServices()
     {
-        Gate::authorize('admin-action');
+        // Gate::authorize('admin-action');
         return Service::with(['user', 'category', 'images'])
             ->where('status', 'pending')
             ->latest()
