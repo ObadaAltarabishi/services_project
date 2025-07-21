@@ -14,11 +14,11 @@ class WalletController extends Controller
         $this->middleware('auth:sanctum');
     }
 
-   /* public function show(Wallet $wallet)
+    /* public function show(Wallet $wallet)
 {
     // Get the authenticated user
     $user = auth()->user();
-    
+
     // Check if the wallet belongs to the authenticated user
 
     if ($user->id !== $wallet->user_id) {
@@ -41,29 +41,30 @@ class WalletController extends Controller
     ]);
 }
 */
-public function show($id)
-{
-    $wallet = Wallet::with('user')->findOrFail($id);
-    
-    if (auth()->id() != $wallet->user_id) {
+    public function showWallet()
+    {
+        $user = \Auth::user();
+        $wallet = Wallet::where('user_id', $user->id)->first();
+
+        if (auth()->id() != $wallet->user_id) {
+            return response()->json([
+                'message' => 'Unauthorized',
+                'success' => false,
+                'debug' => [
+                    'auth_id' => auth()->id(),
+                    'wallet_user_id' => $wallet->user_id
+                ]
+            ], 403);
+        }
+
         return response()->json([
-            'message' => 'Unauthorized',
-            'success' => false,
-            'debug' => [
-                'auth_id' => auth()->id(),
-                'wallet_user_id' => $wallet->user_id
-            ]
-        ], 403);
+            'success' => true,
+            'balance' => $wallet->balance,
+            'user_id' => $wallet->user_id
+        ]);
     }
 
-    return response()->json([
-        'success' => true,
-        'balance' => $wallet->balance,
-        'user_id' => $wallet->user_id
-    ]);
-}
-
-   /* public function update(Request $request, Wallet $wallet)
+    /* public function update(Request $request, Wallet $wallet)
     {
         $this->authorize('update', $wallet);
 
@@ -79,28 +80,30 @@ public function show($id)
         ]);
     }
 */
-    public function addFunds(Request $request, $id)
-{
-    // Manual authorization check (alternative to policy)
-    $wallet = Wallet::with('user')->findOrFail($id);
-    if (auth()->id() !== $wallet->user_id) {
+    public function addFunds(Request $request)
+    {
+        // Manual authorization check (alternative to policy)
+        // $wallet = Wallet::with('user')->findOrFail($id);
+        $user = \Auth::user();
+        $wallet = Wallet::where('user_id', $user->id)->first();
+        if (auth()->id() !== $wallet->user_id) {
+            return response()->json([
+                'message' => 'Unauthorized - You can only add funds to your own wallet',
+                'success' => false
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0.01|max:10000' // Better field name
+        ]);
+
+        $wallet->increment('balance', $validated['amount']);
+
         return response()->json([
-            'message' => 'Unauthorized - You can only add funds to your own wallet',
-            'success' => false
-        ], 403);
+            'success' => true,
+            'message' => 'Funds added successfully',
+            'new_balance' => $wallet->fresh()->balance,
+            'added_amount' => $validated['amount']
+        ], 201);
     }
-
-    $validated = $request->validate([
-        'amount' => 'required|numeric|min:0.01|max:10000' // Better field name
-    ]);
-
-    $wallet->increment('balance', $validated['amount']);
-
-    return response()->json([
-        'success' => true,
-        'message' => 'Funds added successfully',
-        'new_balance' => $wallet->fresh()->balance,
-        'added_amount' => $validated['amount']
-    ]);
-}
 }

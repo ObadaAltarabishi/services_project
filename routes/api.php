@@ -45,13 +45,14 @@ Route::post('/resend-verification', [VerificationController::class, 'resendCode'
 Route::prefix('admin')->group(function () {
     // Route::apiResource('admins', AdminController::class);
     Route::post('/register', [AdminController::class, 'store']);
+    Route::post('/show_users', [AdminController::class, 'indexUsers']);
     // Report management routes
     Route::post('/users/{user}/increase-reports', [AdminController::class, 'increaseReportCount']);
     Route::post('/users/{user}/decrease-reports', [AdminController::class, 'decreaseReportCount']);
-    Route::post('/users/{user}/reset-reports', [AdminController::class, 'resetReportCount']);
-    Route::post('/users/{user}/block', [AdminController::class, 'blockUser']); // New block route
+    // Route::post('/users/{user}/reset-reports', [AdminController::class, 'resetReportCount']);
+    Route::get('/users/{user}/block', [AdminController::class, 'blockUser']); // New block route
 
-    Route::get('/services/pending', [ServiceController::class, 'pendingServices']);
+    Route::post('/services/pending', [ServiceController::class, 'pendingServices']);
     Route::post('/services/{service}/approve', [ServiceController::class, 'approveService']);
     Route::post('/services/{service}/reject', [ServiceController::class, 'rejectService']);
     Route::get('/orders/rejected', [OrderController::class, 'rejectedOrders']);
@@ -68,10 +69,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // Users
     Route::apiResource('users', UserController::class)->except(['store']);
     // Wallets
-     Route::get('/wallet/{id}', [WalletController::class, 'show']);
+    Route::get('/wallet', [WalletController::class, 'showWallet']);
     // Route::put('/wallet/{id}', [WalletController::class, 'update']);
     //Route::apiResource('wallet', WalletController::class);
-     Route::post('/wallet/add-funds/{id}', [WalletController::class, 'addFunds']);
+    Route::post('/wallet/add-funds', [WalletController::class, 'addFunds']);
 
     // Profiles
     Route::apiResource('profiles', ProfileController::class)->only(['show', 'update']);
@@ -81,14 +82,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/services', [ServiceController::class, 'store']);
     Route::patch('/services', [ServiceController::class, 'update']);
     Route::delete('/services', [ServiceController::class, 'destroy']);
-    
+
 
     Route::post('/services/{service}/images', [ImageController::class, 'store']);
     Route::apiResource('services.images', ImageController::class)->only(['index', 'show', 'destroy']);
 
     // Orders
-    Route::get('orders', [OrderController::class,'index']);
-    Route::patch('orders/{id}', [OrderController::class,'update']);
+    Route::get('orders', [OrderController::class, 'index']);
+    Route::patch('orders/{id}', [OrderController::class, 'update']);
     Route::apiResource('orders.files', FileController::class)->only(['index', 'store']);
 
     // Files
