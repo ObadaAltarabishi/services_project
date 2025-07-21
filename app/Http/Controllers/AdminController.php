@@ -24,12 +24,16 @@ class AdminController extends Controller
         return Admin::paginate(10);
     }
 
-    public function indexUsers()
+    public function indexUsers(Request $request)
     {
-        $users = User::where('role', 'user')->where('report_count', '>=', 2)->get();
+        $users = User::where('role', 'user')->where('report_count', '<', 2);
+
+        if ($request->has('search')) {
+            $users->where('name', 'like', '%' . $request->search . '%');
+        }
         return response()->json([
             'message' => 'Success',
-            'data' => $users
+            'data' => $users->get()
         ], 200);
     }
     public function store(Request $request)

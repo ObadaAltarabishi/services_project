@@ -45,14 +45,14 @@ Route::post('/resend-verification', [VerificationController::class, 'resendCode'
 Route::prefix('admin')->group(function () {
     // Route::apiResource('admins', AdminController::class);
     Route::post('/register', [AdminController::class, 'store']);
-    Route::get('/show_users', [AdminController::class, 'indexUsers']);
+    Route::post('/show_users', [AdminController::class, 'indexUsers']);
     // Report management routes
     Route::post('/users/{user}/increase-reports', [AdminController::class, 'increaseReportCount']);
     Route::post('/users/{user}/decrease-reports', [AdminController::class, 'decreaseReportCount']);
     // Route::post('/users/{user}/reset-reports', [AdminController::class, 'resetReportCount']);
     Route::get('/users/{user}/block', [AdminController::class, 'blockUser']); // New block route
 
-    Route::get('/services/pending', [ServiceController::class, 'pendingServices']);
+    Route::post('/services/pending', [ServiceController::class, 'pendingServices']);
     Route::post('/services/{service}/approve', [ServiceController::class, 'approveService']);
     Route::post('/services/{service}/reject', [ServiceController::class, 'rejectService']);
     Route::get('/orders/rejected', [OrderController::class, 'rejectedOrders']);

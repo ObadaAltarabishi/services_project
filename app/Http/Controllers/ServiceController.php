@@ -175,17 +175,20 @@ class ServiceController extends Controller
         }
     }
 
-    public function pendingServices()
+    public function pendingServices(Request $request)
     {
+        $service = Service::with(['user', 'category', 'images'])
+            ->where('status', 'pending');
         // Gate::authorize('admin-action');
-        return Service::with(['user', 'category', 'images'])
-            ->where('status', 'pending')
-            ->latest()
-            ->paginate(10);
+        if ($request->has('search')) {
+            $service->where('name', 'like', '%' . $request->search . '%');
+        }
+        return $service->get();
     }
 
     public function approveService(Service $service)
     {
+
         Gate::authorize('admin-action');
 
         $service->update(['status' => 'accepted']);
