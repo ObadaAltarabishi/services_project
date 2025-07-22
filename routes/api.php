@@ -68,6 +68,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Users
     Route::apiResource('users', UserController::class)->except(['store']);
+    Route::post('/update_user', [UserController::class, 'update']);
+
     // Wallets
     Route::get('/wallet', [WalletController::class, 'showWallet']);
     // Route::put('/wallet/{id}', [WalletController::class, 'update']);

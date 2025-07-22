@@ -187,6 +187,8 @@ protected function durationToMinutes(string $duration): int
             switch ($data['status']) {
                 case 'rejected':
                     if ($previousStatus !== "pending") {
+                        $order->status='rejected';
+                        $order->save();
                         return response()->json(["message" => "You can't reject this order"], 400);
                     }
                     NotificationService::createOrderStatusNotification($order, 'rejected');
@@ -194,13 +196,17 @@ protected function durationToMinutes(string $duration): int
                     
                 case 'accepted':
                     if ($previousStatus !== 'accepted') {
+                        $order->status='accepted';
+                        $order->save();
                         NotificationService::createOrderStatusNotification($order, 'accepted');
                     }
                     break;
                     
                 case 'completed':
                     if ($previousStatus !== 'completed') {
+                        $order->status='completed';                       
                         $order->user->wallet->decrement('balance', $order->service->price);
+                        $order->save();
                         NotificationService::createOrderStatusNotification($order, 'completed');
                         NotificationService::createSellerOrderNotification($order, 'completed');
                     }

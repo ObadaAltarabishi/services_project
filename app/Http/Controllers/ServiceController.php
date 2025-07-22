@@ -179,6 +179,7 @@ class ServiceController extends Controller
     {
         $service = Service::with(['user', 'category', 'images'])
             ->where('status', 'pending');
+            
         // Gate::authorize('admin-action');
         if ($request->has('search')) {
             $service->where('name', 'like', '%' . $request->search . '%');

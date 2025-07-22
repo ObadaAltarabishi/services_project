@@ -15,6 +15,11 @@ class CategoryController extends Controller
 
     public function index()
     {
+        
+//$schedule->command('orders:cancel-expired')->everyMinute();
+    
+    // For debugging only (remove in production)
+    //$nextRun = $schedule->events()[0]->nextRunDate()->format('Y-m-d H:i:s');
         return Category::paginate(10);
     }
 

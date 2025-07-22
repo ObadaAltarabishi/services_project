@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules;
 
 class UserController extends Controller
 {
@@ -29,15 +31,15 @@ class UserController extends Controller
         return $user->load([ 'profile', 'services']);
     }
 
-    public function update(Request $request, User $user)
+    public function update(Request $request)
     {
-        if (!Gate::allows('update-user', $user)) {
+        $user=auth()->user();
+        if (!Gate::allows('update-user',$user)) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
         $request->validate([
-            'name' => 'sometimes|string|max:255',
-            'email' => 'sometimes|string|email|max:255|unique:users,email,'.$user->id,
+            'phone_number' => 'sometimes|max:255',
             'password' => ['sometimes', Rules\Password::defaults()],
         ]);
 
@@ -48,6 +50,7 @@ class UserController extends Controller
 
         $user->update($data);
 
+        $user->save();
         return $user;
     }
 
