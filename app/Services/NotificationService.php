@@ -30,34 +30,39 @@ class NotificationService
     }
 
     public static function createOrderStatusNotification(Order $order, string $status)
-    {
-        $notificationData = [
-            'user_id' => $order->user_id,
-            'order_id' => $order->id,
-            'type' => 'order_' . $status,
-        ];
-
-        switch ($status) {
-            case 'accepted':
-                $notificationData['title'] = 'Order Accepted';
-                $notificationData['content'] = "Your order for {$order->service->title} has been accepted";
-                break;
-            case 'rejected':
-                $notificationData['title'] = 'Order Rejected';
-                $notificationData['content'] = "Your order for {$order->service->title} has been rejected";
-                break;
-            case 'completed':
-                $notificationData['title'] = 'Order Completed';
-                $notificationData['content'] = "Your order for {$order->service->title} has been completed";
-                break;
-            case 'canceled':
-                $notificationData['title'] = 'Order Canceled';
-                $notificationData['content'] = "Your order for {$order->service->title} has been canceled";
-                break;
-        }
-
-        return self::createNotification($notificationData);
+{
+    if (!$order->service) {
+        \Log::error("Service not found for Order #{$order->id}");
+        return null; // أو يمكنك إرجاع إشعار بديل
     }
+
+    $notificationData = [
+        'user_id' => $order->user_id,
+        'order_id' => $order->id,
+        'type' => 'order_' . $status,
+    ];
+
+    switch ($status) {
+        case 'accepted':
+            $notificationData['title'] = 'Order Accepted';
+            $notificationData['content'] = "Your order for {$order->service->title} has been accepted";
+            break;
+        case 'rejected':
+            $notificationData['title'] = 'Order Rejected';
+            $notificationData['content'] = "Your order for {$order->service->title} has been rejected";
+            break;
+        case 'completed':
+            $notificationData['title'] = 'Order Completed';
+            $notificationData['content'] = "Your order for {$order->service->title} has been completed";
+            break;
+        case 'canceled':
+            $notificationData['title'] = 'Order Canceled';
+            $notificationData['content'] = "Your order for {$order->service->title} has been canceled";
+            break;
+    }
+
+    return self::createNotification($notificationData);
+}
 
     public static function createSellerOrderNotification(Order $order, string $status)
     {

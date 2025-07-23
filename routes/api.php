@@ -68,6 +68,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Users
     Route::apiResource('users', UserController::class)->except(['store']);
+    Route::post('/update_user', [UserController::class, 'update']);
+
     // Wallets
     Route::get('/wallet', [WalletController::class, 'showWallet']);
     // Route::put('/wallet/{id}', [WalletController::class, 'update']);
@@ -89,7 +91,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Orders
     Route::get('orders', [OrderController::class, 'index']);
-    Route::patch('orders/{id}', [OrderController::class, 'update']);
+    Route::post('orders', [OrderController::class, 'store']);
+    Route::patch('orders/{order}', [OrderController::class, 'update']);
+    Route::post('orders/{order}', [OrderController::class, 'wrongOrders']);
     Route::apiResource('orders.files', FileController::class)->only(['index', 'store']);
 
     // Files

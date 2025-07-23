@@ -15,6 +15,11 @@ class CategoryController extends Controller
 
     public function index()
     {
+        
+//$schedule->command('orders:cancel-expired')->everyMinute();
+    
+    // For debugging only (remove in production)
+    //$nextRun = $schedule->events()[0]->nextRunDate()->format('Y-m-d H:i:s');
         return Category::paginate(10);
     }
 
@@ -24,6 +29,7 @@ class CategoryController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            
         ]);
 
         return Category::create($validated);
@@ -40,6 +46,7 @@ class CategoryController extends Controller
 
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
+            
         ]);
 
         $category->update($validated);
