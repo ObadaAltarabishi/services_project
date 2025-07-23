@@ -21,7 +21,7 @@ class OrderController extends Controller
     public function index(Request $request)
 {
     $user = $request->user();
-    
+
     return Order::where(function($query) use ($user) {
             // الطلبات التي أنشأها المستخدم
             $query->where('user_id', $user->id);
@@ -40,11 +40,11 @@ public function store(Request $request)
     $validator = Validator::make($request->all(), [
         'service_id' => 'required|exists:services,id',
         'provided_service_id' => 'nullable|exists:services,id',
-        'start_date' => 'required|date|after_or_equal:today',
+        'start_date' => 'nullable|date|after_or_equal:today',
         'end_date' => 'nullable|date|after:start_date',
     ]);
 
-    if ($validator->fails()) {  
+    if ($validator->fails()) {
         return response()->json([
             'message' => 'Validation error',
             'errors' => $validator->errors()
@@ -54,7 +54,7 @@ public function store(Request $request)
     $userId = auth()->id();
     $user = User::with('wallet')->findOrFail($userId);
     $service = Service::with('user')->findOrFail($request->service_id);
-    $providedService = $request->provided_service_id 
+    $providedService = $request->provided_service_id
         ? Service::findOrFail($request->provided_service_id)
         : null;
 
@@ -77,14 +77,14 @@ public function store(Request $request)
         // Get durations from both services
         $serviceDuration = $service->exchange_time ?? '1 day'; // default if not set
         $providedServiceDuration = $providedService->exchange_time ?? '1 day';
-        
+
         // Parse durations to days
         $serviceDays = $this->durationToDays($serviceDuration);
         $providedServiceDays = $this->durationToDays($providedServiceDuration);
-        
+
         // Use the longer duration
         $longerDurationDays = max($serviceDays, $providedServiceDays);
-        
+
         // Calculate dates
         $startDate = now()->startOfDay(); // Today at 00:00:00
         $endDate = $startDate->copy()->addDays($longerDurationDays);
@@ -97,7 +97,7 @@ public function store(Request $request)
                 'current_balance' => $user->wallet->balance
             ], 400);
         }
-        
+
         // Use provided dates for regular orders
         $startDate = $request->start_date;
         $endDate = $request->end_date;
@@ -116,7 +116,7 @@ public function store(Request $request)
     // Send appropriate notification
     if ($providedService) {
         NotificationService::createServiceExchangeNotification(
-            $order, 
+            $order,
             $providedService,
             $longerDurationDays
         );
@@ -140,14 +140,14 @@ protected function durationToDays(string $duration): int
         'week' => 7,
         'month' => 30, // approximation
     ];
-    
+
     foreach ($units as $unit => $days) {
         if (str_contains($duration, $unit)) {
             $value = (int) preg_replace('/[^0-9]/', '', $duration);
             return (int) ceil($value * $days); // Round up to full days
         }
     }
-    
+
     return 1; // default to 1 day if format not recognized
 }
 
@@ -160,14 +160,14 @@ protected function durationToMinutes(string $duration): int
         'week' => 10080,
         'month' => 43200, // approx 30 days
     ];
-    
+
     foreach ($units as $unit => $minutes) {
         if (str_contains($duration, $unit)) {
             $value = (int) preg_replace('/[^0-9]/', '', $duration);
             return $value * $minutes;
         }
     }
-    
+
     return 60; // default to 1 hour if format not recognized
 }
 
@@ -191,7 +191,7 @@ protected function durationToMinutes(string $duration): int
             'provided_service_id' => 'nullable|exists:services,id',
             'end_date' => 'nullable|date|after:start_date',
         ]);
-        
+
         $previousStatus = $order->status;
 
         if (isset($data['status'])) {
@@ -204,19 +204,35 @@ protected function durationToMinutes(string $duration): int
                     }
                     NotificationService::createOrderStatusNotification($order, 'rejected');
                     break;
-                    
+
                 case 'accepted':
-                    
+
                     if ($previousStatus !== 'accepted') {
                         $order->status='accepted';
-                        
+
                         NotificationService::createOrderStatusNotification($order, 'accepted');
+                        //if($order->provided_service_id !==null){
+                             //return $order->service->user_id;
+                             //return $order->provided_service_id,
+                            Order::create([
+                            'user_id' => $order->service->user_id,
+                            'service_id' => $order->provided_service_id,
+                            //'provided_service_id' => $request->provided_service_id,
+                            'start_date' => $startDate,
+                            'end_date' => $endDate,
+                            'status' => 'pending',
+                            'is_service_exchange' => (bool)$providedService,
+                            ]);
+
+
+
+
                     }
                     break;
-                    
+
                 case 'completed':
                     if ($previousStatus !== 'completed') {
-                        $order->status='completed';                       
+                        $order->status='completed';
                         $order->user->wallet->decrement('balance', $order->service->price);
                         $sellerId=$order->service->user_id;
                         $sellerWallet=Wallet::find($sellerId);
@@ -226,13 +242,13 @@ protected function durationToMinutes(string $duration): int
                         NotificationService::createSellerOrderNotification($order, 'completed');
                     }
                     break;
-                    
+
                 case 'canceled':
                     NotificationService::createOrderStatusNotification($order, 'canceled');
                     break;
             }
         }
-        
+
         $order->update($data);
         //return $order;
         return response()->json(
@@ -263,7 +279,7 @@ protected function durationToMinutes(string $duration): int
 
        $order->status='canceled';
        $order->save();
-       
+
 
         return response()->json(
                 $order->load(['user', 'service'])
