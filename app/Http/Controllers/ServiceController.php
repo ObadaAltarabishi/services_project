@@ -134,7 +134,7 @@ class ServiceController extends Controller
             'name' => 'sometimes|string|max:255',
             'description' => 'sometimes|string',
             'price' => 'sometimes|numeric|min:0',
-            'exchange_time' => 'nullable|date_format:Y-m-d H:i:s|after_or_equal:',
+            'exchange_time' => 'nullable|after_or_equal:',
             'exchange_with_service_id' => 'nullable|exists:services,id',
             'category_id' => 'sometimes|exists:categories,id',
             'status' => 'sometimes|in:pending,accepted,rejected'
@@ -179,7 +179,7 @@ class ServiceController extends Controller
     {
         $service = Service::with(['user', 'category', 'images'])
             ->where('status', 'pending');
-            
+
         // Gate::authorize('admin-action');
         if ($request->has('search')) {
             $service->where('name', 'like', '%' . $request->search . '%');
