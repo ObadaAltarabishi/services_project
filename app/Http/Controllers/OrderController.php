@@ -18,11 +18,21 @@ class OrderController extends Controller
     }
 
     public function index(Request $request)
-    {
-        return Order::where('user_id', $request->user()->id)
-            ->with(['user', 'service', 'providedService'])
-            ->paginate(10);
-    }
+{
+    $user = $request->user();
+    
+    return Order::where(function($query) use ($user) {
+            // الطلبات التي أنشأها المستخدم
+            $query->where('user_id', $user->id);
+        })
+        ->orWhereHas('service', function($q) use ($user) {
+            // الطلبات التي تخص خدمة يملكها المستخدم
+            $q->where('user_id', $user->id);
+        })
+        ->with(['user', 'service', 'providedService'])
+        ->orderBy('created_at', 'desc')
+        ->paginate(10);
+}
 
 public function store(Request $request)
 {
@@ -195,9 +205,10 @@ protected function durationToMinutes(string $duration): int
                     break;
                     
                 case 'accepted':
+                    
                     if ($previousStatus !== 'accepted') {
                         $order->status='accepted';
-                        $order->save();
+                        
                         NotificationService::createOrderStatusNotification($order, 'accepted');
                     }
                     break;
@@ -219,7 +230,10 @@ protected function durationToMinutes(string $duration): int
         }
         
         $order->update($data);
-        return $order;
+        //return $order;
+        return response()->json(
+                $order->load(['user', 'service'])
+            );
     }
 
     public function destroy(Order $order)
@@ -236,8 +250,19 @@ protected function durationToMinutes(string $duration): int
     {
         Gate::authorize('admin-action');
         return Order::with(['user', 'service', 'providedService'])
-            ->where('status', 'rejected')
+            ->where('status', 'canceled')
             ->latest()
             ->paginate(10);
+    }
+
+    public function wrongOrders(Request $request , Order $order ){
+
+       $order->status='canceled';
+       $order->save();
+       
+
+        return response()->json(
+                $order->load(['user', 'service'])
+            );
     }
 }

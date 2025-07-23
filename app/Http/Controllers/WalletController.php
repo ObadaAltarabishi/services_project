@@ -64,7 +64,7 @@ class WalletController extends Controller
         ]);
     }
 
-    /* public function update(Request $request, Wallet $wallet)
+     public function update(Request $request, Wallet $wallet)
     {
         $this->authorize('update', $wallet);
 
@@ -79,7 +79,7 @@ class WalletController extends Controller
             'wallet' => $wallet
         ]);
     }
-*/
+
     public function addFunds(Request $request)
     {
         // Manual authorization check (alternative to policy)

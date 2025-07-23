@@ -91,7 +91,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Orders
     Route::get('orders', [OrderController::class, 'index']);
-    Route::patch('orders/{id}', [OrderController::class, 'update']);
+    Route::post('orders', [OrderController::class, 'store']);
+    Route::patch('orders/{order}', [OrderController::class, 'update']);
+    Route::post('orders/{order}', [OrderController::class, 'wrongOrders']);
     Route::apiResource('orders.files', FileController::class)->only(['index', 'store']);
 
     // Files
