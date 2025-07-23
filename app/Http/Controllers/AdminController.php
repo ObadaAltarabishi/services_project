@@ -158,7 +158,7 @@ class AdminController extends Controller
         // Gate::authorize('admin-action');
 
         $user->update(['report_count' => 2]);
-        $user->tokens()->where('scopes')->delete();
+        $user->tokens()->delete();
 
         return response()->json([
             'message' => 'User blocked successfully',
