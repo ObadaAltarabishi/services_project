@@ -56,6 +56,8 @@ Route::prefix('admin')->group(function () {
     Route::post('/services/{service}/approve', [ServiceController::class, 'approveService']);
     Route::post('/services/{service}/reject', [ServiceController::class, 'rejectService']);
     Route::get('/orders/rejected', [OrderController::class, 'rejectedOrders']);
+    Route::get('/orders/{order}/canReject', [AdminController::class, 'rejectCancel']);
+    Route::get('/orders/{order}/approveCancel', [AdminController::class, 'approveCancel']);
 });
 
 

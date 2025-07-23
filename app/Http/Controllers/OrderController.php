@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Models\Wallet;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
@@ -217,6 +218,9 @@ protected function durationToMinutes(string $duration): int
                     if ($previousStatus !== 'completed') {
                         $order->status='completed';                       
                         $order->user->wallet->decrement('balance', $order->service->price);
+                        $sellerId=$order->service->user_id;
+                        $sellerWallet=Wallet::find($sellerId);
+                        $sellerWallet->increment('balance', $order->service->price);
                         $order->save();
                         NotificationService::createOrderStatusNotification($order, 'completed');
                         NotificationService::createSellerOrderNotification($order, 'completed');

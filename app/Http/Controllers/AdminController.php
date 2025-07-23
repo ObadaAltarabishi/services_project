@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Order;
 use App\Models\Admin;
+use App\Models\Wallet;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Gate;
@@ -167,4 +169,33 @@ class AdminController extends Controller
             'status' => 'blocked'
         ]);
     }
+
+    public function rejectCancel(Order $order){
+        $order->status='completed';
+       $order->save();
+       
+
+        return response()->json(
+                $order->load(['user', 'service'])
+            );
+
+    }
+
+    public function approveCancel(Order $order){
+        $order->user->wallet->increment('balance', $order->service->price);
+                        $order->save();
+                        $sellerId=$order->service->user_id;
+                        $sellerWallet=Wallet::find($sellerId);
+    
+                        $sellerWallet->decrement('balance', $order->service->price);
+            
+                        return response()->json(
+                $order->load(['user', 'service'])
+                
+            );
+            
+
+
+    }
+
 }
