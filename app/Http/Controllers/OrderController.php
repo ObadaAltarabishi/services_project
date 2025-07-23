@@ -214,15 +214,15 @@ protected function durationToMinutes(string $duration): int
                         //if($order->provided_service_id !==null){
                              //return $order->service->user_id;
                              //return $order->provided_service_id,
-                            Order::create([
-                            'user_id' => $order->service->user_id,
-                            'service_id' => $order->provided_service_id,
+                            //Order::create([
+                            //'user_id' => $order->service->user_id,
+                            //'service_id' => $order->provided_service_id,
                             //'provided_service_id' => $request->provided_service_id,
-                            'start_date' => $startDate,
-                            'end_date' => $endDate,
-                            'status' => 'pending',
-                            'is_service_exchange' => (bool)$providedService,
-                            ]);
+                            //'start_date' => $startDate,
+                            //'end_date' => $endDate,
+                            //'status' => 'pending',
+                            //'is_service_exchange' => (bool)$providedService,
+                            //]);
 
 
 
