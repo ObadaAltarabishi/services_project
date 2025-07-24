@@ -30,7 +30,7 @@ class OrderController extends Controller
             // الطلبات التي تخص خدمة يملكها المستخدم
             $q->where('user_id', $user->id);
         })
-        ->with(['user', 'service', 'providedService'])
+        ->with(['user', 'service', 'providedService','files'])
         ->orderBy('created_at', 'desc')
         ->paginate(10);
 }
@@ -211,33 +211,36 @@ protected function durationToMinutes(string $duration): int
                         $order->status='accepted';
 
                         NotificationService::createOrderStatusNotification($order, 'accepted');
-                        //if($order->provided_service_id !==null){
+                        if($order->provided_service_id !==null){
                              //return $order->service->user_id;
                              //return $order->provided_service_id,
-                            //Order::create([
-                            //'user_id' => $order->service->user_id,
-                            //'service_id' => $order->provided_service_id,
-                            //'provided_service_id' => $request->provided_service_id,
-                            //'start_date' => $startDate,
-                            //'end_date' => $endDate,
-                            //'status' => 'pending',
-                            //'is_service_exchange' => (bool)$providedService,
-                            //]);
+                            Order::create([
+                            'user_id' => $order->service->user_id,
+                            'service_id' => $order->provided_service_id,
+                            'provided_service_id' => $order->service_id,
+                            'status' => 'accepted',
 
+                            ]);
+
+                        $orderClone=$order;
+                        //$order->provided_service_id=null;
+                        $order->save();
 
 
 
                     }
+                }
                     break;
 
                 case 'completed':
                     if ($previousStatus !== 'completed') {
                         $order->status='completed';
+                        if($order->provided_service_id ==null){
                         $order->user->wallet->decrement('balance', $order->service->price);
                         $sellerId=$order->service->user_id;
                         $sellerWallet=Wallet::find($sellerId);
                         $sellerWallet->increment('balance', $order->service->price);
-                        $order->save();
+                        $order->save();}
                         NotificationService::createOrderStatusNotification($order, 'completed');
                         NotificationService::createSellerOrderNotification($order, 'completed');
                     }
