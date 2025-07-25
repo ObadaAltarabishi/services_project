@@ -26,8 +26,9 @@ class ServiceController extends Controller
         }
         // Price sorting - takes priority over default sorting
         if ($request->has('sort_price')) {
-            $sortDirection = strtolower($request->sort_price) === 'desc' ? 'desc' : 'asc';
-            $query->orderBy('price', $sortDirection);
+            $direction = $request->input('sort_price') === 'desc' ? 'desc' : 'asc';
+            $query = Service::orderBy('price', $direction);
+
         }
         // Default sorting (only applied if no price sort specified)
         else {
