@@ -22,7 +22,7 @@ class OrderController extends Controller
 {
     $user = $request->user();
 
-    return Order::where(function($query) use ($user) {
+    $orders= Order::where(function($query) use ($user) {
             // الطلبات التي أنشأها المستخدم
             $query->where('user_id', $user->id);
         })
@@ -33,6 +33,13 @@ class OrderController extends Controller
         ->with(['user', 'service', 'providedService','files'])
         ->orderBy('created_at', 'desc')
         ->paginate(10);
+
+        foreach ($orders as $order) {
+
+            $userName=User::where("id",$order->service->user_id)->first()->name;
+           $order['sallerName']=$userName;
+        }
+        return $orders;
 }
 
 public function store(Request $request)
