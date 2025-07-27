@@ -7,6 +7,8 @@ use App\Models\Order;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
+
 use Illuminate\Support\Facades\Validator;
 
 class FileController extends Controller
@@ -41,17 +43,23 @@ class FileController extends Controller
 
         $validatedData = $validator->validated();
 
-        $uploadedFile = $request->file('path');
-        $path = $uploadedFile->store('orders/files', 'public');
+        // $uploadedFile = $request->file('path');
+        // $path = $uploadedFile->store('orders/files', 'public');
 
+        $name = $request->path->getClientOriginalName();
+        $newName = rand(9999999999, 99999999999) . $name;
+        $request->path->move(public_path('orders/files'), $newName);
+        $request->merge([
+            'path2' => URL::to('orders/files/' . $newName)
+        ]);
         $file = $order->files()->create([
             'uploader_id' => auth()->id(),
             'receiver_id' => $validatedData['receiver_id'],
-            'path' => $path,
+            'path' => $request->path2,
             'order_id' => $order->id, // استخدام order_id من параметр المسار بدلاً من القيمة الثابتة
-            'original_name' => $uploadedFile->getClientOriginalName(),
-            'mime_type' => $uploadedFile->getMimeType(),
-            'size' => $uploadedFile->getSize()
+            'original_name' => $name,
+            'mime_type' => null,
+            'size' => null
         ]);
 
         return response()->json([

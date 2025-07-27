@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 
+use Illuminate\Support\Facades\URL;
 
 class ProfileController extends Controller
 {

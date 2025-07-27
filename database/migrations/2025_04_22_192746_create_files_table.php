@@ -14,8 +14,8 @@ return new class extends Migration
             $table->foreignId('uploader_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('receiver_id')->constrained('users')->onDelete('cascade');
             $table->string('path');
-            $table->string('mime_type');
-            $table->integer('size');
+            $table->string('mime_type')->nullable();
+            $table->integer('size')->nullable();
             $table->timestamps();
         });
     }

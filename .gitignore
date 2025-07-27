@@ -7,6 +7,7 @@
 /vendor
 .env
 public/images
+public/orders
 .env.backup
 .env.production
 .phpunit.result.cache
