@@ -20,21 +20,19 @@ class ServiceController extends Controller
 
     public function index(Request $request)
     {
-        $query = Service::with(['user', 'category', 'images'])->latest();
+        $query = Service::with(['user', 'category', 'images']);
         if ($request->has('search')) {
             $query->where('name', 'like', '%' . $request->search . '%');
         }
         // Price sorting - takes priority over default sorting
         if ($request->has('sort_price')) {
             $direction = $request->input('sort_price') === 'desc' ? 'desc' : 'asc';
-            $query = Service::orderBy('price', $direction);
-
+            $query = $query->orderBy('price', $direction);
         }
         // Default sorting (only applied if no price sort specified)
         else {
             $query->latest();
         }
-
         if ($request->has('status')) {
             if (Gate::allows('admin-action')) {
                 $query->where('status', $request->status);
@@ -42,7 +40,6 @@ class ServiceController extends Controller
         } elseif (!Gate::allows('admin-action')) {
             $query->where('status', 'accepted');
         }
-
         return $query->paginate(10);
     }
 
