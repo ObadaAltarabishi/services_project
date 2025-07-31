@@ -132,7 +132,7 @@ class ServiceController extends Controller
             'name' => 'sometimes|string|max:255',
             'description' => 'sometimes|string',
             'price' => 'sometimes|numeric|min:0',
-            'exchange_time' => 'nullable|after_or_equal:',
+            'exchange_time' => 'nullable',
             'exchange_with_service_id' => 'nullable|exists:services,id',
             'category_id' => 'sometimes|exists:categories,id',
             'status' => 'sometimes|in:pending,accepted,rejected'
